@@ -1,0 +1,80 @@
+{
+    "name": "openslides-auth-service",
+    "version": "1.0.0",
+    "description": "Service for OpenSlides which ...",
+    "main": "./build/server.js",
+    "directories": {
+        "test": "auth/tests"
+    },
+    "scripts": {
+        "postinstall": "npm run uptodate",
+        "cleanup": "npm run prettify-write && npm run linter-write",
+        "start": "node build/index.js",
+        "dev": "nodemon src/index.ts",
+        "linter-write": "tslint --fix -c ./tslint.json 'src/**/*{.ts,.tsx}'",
+        "prettify-write": "prettier --config ./.prettierrc --write \"src/**/*{.ts,.js,.json,.css,.scss}\"",
+        "lint-check": "tslint -c ./tslint.json 'src/**/*{.ts,.tsx}'",
+        "prettify-check": "prettier --config ./.prettierrc --list-different \"src/{app,environments}/**/*{.ts,.js,.json,.css,.scss}\"",
+        "build-all": "npm run build-ts && npm run build-client",
+        "build-ts": "tsc",
+        "build-client": "cd client && npm install && npm install --only=dev && npm run build",
+        "heroku-postbuild": "npm run build-all",
+        "prebuild": "echo false > .buildstatus",
+        "postbuild": "echo true > .buildstatus",
+        "test": "jest --passWithNoTests",
+        "uptodate": "npm update && npm update --dev",
+        "make-badges": "node_modules/.bin/jest-badges-readme",
+        "make-readme": "npm t && npm run make-badges"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/OpenSlides/openslides-auth-service.git"
+    },
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/OpenSlides/openslides-auth-service/issues"
+    },
+    "homepage": "https://github.com/OpenSlides/openslides-auth-service#readme",
+    "devDependencies": {
+        "@olavoparno/jest-badges-readme": "^1.4.1",
+        "@types/cookie-parser": "^1.4.2",
+        "@types/cors": "^2.8.6",
+        "@types/crypto-random-string": "^2.0.0",
+        "@types/express": "^4.17.3",
+        "@types/jsonwebtoken": "^8.5.0",
+        "@types/node": "^13.13.12",
+        "@types/pouchdb": "^6.4.0",
+        "@types/qs": "^6.9.3",
+        "@types/randomstring": "^1.1.6",
+        "@types/sha.js": "^2.4.0",
+        "nodemon": "^2.0.4",
+        "prettier": "^1.19.1",
+        "sync-request": "^6.1.0",
+        "tslint": "^6.1.1"
+    },
+    "dependencies": {
+        "@material-ui/core": "^4.10.2",
+        "body-parser": "^1.19.0",
+        "cookie-parser": "^1.4.5",
+        "cors": "^2.8.5",
+        "crypto-random-string": "^3.2.0",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "express-jwt": "^5.3.1",
+        "express-react-views": "^0.11.0",
+        "jsonwebtoken": "^8.5.1",
+        "pouchdb": "^7.2.1",
+        "pouchdb-adapter-memory": "^7.2.1",
+        "qs": "^6.9.4",
+        "randomstring": "^1.1.5",
+        "react": "^16.13.1",
+        "react-dom": "^16.13.1",
+        "reflect-metadata": "^0.1.13",
+        "sha.js": "^2.4.11",
+        "ts-node": "^8.10.2",
+        "tslib": "^1.13.0",
+        "typescript": "^3.9.5",
+        "uuidv4": "^6.1.0"
+    }
+}
