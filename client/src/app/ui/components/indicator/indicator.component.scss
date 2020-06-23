@@ -1,0 +1,13 @@
+.app-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  &.red {
+    background-color: red;
+  }
+  &.green {
+    background-color: green;
+  }
+}

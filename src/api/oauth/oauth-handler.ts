@@ -8,8 +8,10 @@ import shajs from 'sha.js';
 import request from 'sync-request';
 import url from 'url';
 
+import { ClientHandler } from '../../core/models/client/client-handler';
+import { ClientHandlerInterface } from '../../core/models/client/client-handler.interface';
 import { Keys } from '../../config';
-import { Constructable, InjectService } from '../../core/modules/decorators';
+import { Constructable, InjectService, Inject } from '../../core/modules/decorators';
 import GlobalStorage from '../../adapter/services/global-storage';
 import { Modules } from '../../model-services/modules';
 import { OAuthHandlerInterface } from './oauth-handler-interface';
@@ -39,17 +41,15 @@ interface UrlOptions {
   code_challenge_method?: CodeChallengeMethod;
 }
 
-interface GithubOptions extends UrlOptions {
-  login?: string;
-  allow_signup?: boolean;
-}
-
 @Constructable(OAuthHandlerInterface)
 export class OAuthHandler implements OAuthHandlerInterface {
   public readonly name = 'OAuthHandler';
 
   @InjectService(GlobalStorage)
   private readonly storage: GlobalStorage;
+
+  @Inject(ClientHandlerInterface)
+  private readonly clientHandler: ClientHandler;
 
   private readonly registeredClients: Client[] = [
     {
@@ -92,7 +92,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
       console.log('client', client);
       if (!client) {
         this.sendError(res, 'invalid client');
-        // res.status(401).json({ error: 'invalid client' });
         return;
       }
       if (req.body.code_verifier) {
@@ -100,21 +99,19 @@ export class OAuthHandler implements OAuthHandlerInterface {
         console.log('codeChallenge', codeChallenge);
         if (codeChallenge !== client.codeChallenge) {
           this.sendError(res, 'invalid code verifier');
-          // res.status(401).json({ error: 'invalid code verifier' });
           return;
         }
       } else {
         clientSecret = req.body.client_secret;
         if (clientSecret !== client.clientSecret) {
           this.sendError(res, 'invalid secret');
-          // res.status(401).json({ error: 'invalid client' });
           return;
         }
       }
 
       if (req.body.grant_type !== 'authorization_code') {
         this.sendError(res, 'unsupported grant type');
-        // res.status(401).json({ error: 'unsupported grant type' });
+        return;
       }
 
       const code = this.codes[req.body.code];
@@ -238,12 +235,17 @@ export class OAuthHandler implements OAuthHandlerInterface {
       client.redirectUri = queries.redirect_uri;
 
       this.requests[reqid] = queries;
-      res.render('authorize', { client, reqid });
+      // res.sendFile(this.clientHandler.getClientRoute());
+      res.render('authorize', {
+        client,
+        reqid,
+        onAuthenticate: (username: string, password: string) => this.authenticate(username, password)
+      });
     }
   }
 
   public async approve(req: express.Request, res: express.Response): Promise<void> {
-    console.log('body', req.body);
+    console.log('approved body', req.body);
 
     const reqid = req.body.reqid;
     const query = this.requests[reqid];
@@ -270,6 +272,10 @@ export class OAuthHandler implements OAuthHandlerInterface {
       res.redirect(urlParsed);
       return;
     }
+  }
+
+  private authenticate(username: string, password: string): void {
+    console.log('username', username, password);
   }
 
   private find<T>(array: any[], param: keyof T, value: string): T {
@@ -314,18 +320,10 @@ export class OAuthHandler implements OAuthHandlerInterface {
     return { clientId: credentials[0], clientSecret: credentials[1] };
   }
 
-  private base64UrlEncode(input: ArrayBuffer): string {
-    return btoa(String.fromCharCode.apply(null, (new Uint8Array(input) as unknown) as number[]))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-  }
-
   private generateCodeChallenge(method: CodeChallengeMethod, codeVerifier: string): string {
     console.log('generateCodeChallenge', method, codeVerifier);
     if (method) {
       return new shajs.sha256().update(codeVerifier).digest('hex');
-      // return this.base64UrlEncode(new shajs.sha256().update(codeVerifier).digest('hex'));
     }
     return codeVerifier;
   }

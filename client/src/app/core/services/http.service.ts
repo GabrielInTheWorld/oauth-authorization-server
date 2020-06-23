@@ -49,6 +49,8 @@ export class HttpService {
       responseType = 'json';
     }
 
+    console.log('send', data);
+
     const url = path.startsWith('/') ? `${this.serverURL}${path}` : `${this.serverURL}/${path}`;
     // const url = path;
 
@@ -94,11 +96,10 @@ export class HttpService {
     return await this.send<T>(path, HTTPMethod.DELETE, data, header);
   }
 
-  private getServerURL(): string {
+  public getServerURL(): string {
     const protocol = window.location.protocol;
     const location = window.location.hostname;
     const port = window.location.port;
-    return `${protocol}//${location}:${port === '4200' ? '8010' : port}`;
-    // (protocol === 'https:' ? 'wss' : 'ws') + '://' + location + ':' + (port === '4200' ? '8000' : port);
+    return `${protocol}//${location}:${port === '4210' ? '8010' : port}`;
   }
 }

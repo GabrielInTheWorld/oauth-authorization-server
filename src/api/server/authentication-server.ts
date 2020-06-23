@@ -5,6 +5,7 @@ import { createServer, Server } from 'http';
 import path from 'path';
 
 import BaseServer from '../interfaces/base-server';
+import { ClientHandlerInterface } from '../../core/models/client/client-handler.interface';
 import { Constructable } from '../../core/modules/decorators';
 import { OAuthRoutes } from '../oauth/oauth-routes';
 import RouteHandler from '../services/route-handler';
@@ -50,12 +51,14 @@ export default class AuthenticationServer implements BaseServer {
   }
 
   private initClient(): void {
-    this.app.use('/', express.static(path.resolve(RouteHandler.CLIENT_PATH)));
+    this.app.use('/', express.static(path.resolve(ClientHandlerInterface.CLIENT_PATH)));
     this.app.use('/', express.static(path.resolve(RouteHandler.VIEWS_PATH)));
     this.app.set('views', path.resolve(RouteHandler.VIEWS_PATH));
     this.app.set('view engine', 'jsx');
     this.app.engine('jsx', require('express-react-views').createEngine());
-    // this.app.all('/', (req, res) => res.sendFile(path.join(path.resolve(RouteHandler.CLIENT_PATH), 'index.html')));
+    // this.app.all('*', (req, res) =>
+    //   res.sendFile(path.join(path.resolve(ClientHandlerInterface.CLIENT_PATH), 'index.html'))
+    // );
   }
 
   public getApp(): express.Application {

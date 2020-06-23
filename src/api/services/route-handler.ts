@@ -11,7 +11,6 @@ import TokenGenerator from './token-generator';
 
 @Constructable(RouteHandlerInterface)
 export default class RouteHandler implements RouteHandlerInterface {
-  public static readonly CLIENT_PATH = 'client/dist/client';
   public static readonly VIEWS_PATH = 'views';
 
   public name = 'RouteHandler';
@@ -148,7 +147,7 @@ export default class RouteHandler implements RouteHandlerInterface {
     //     success: true,
     //     message: 'Hello World'
     // });
-    const index = path.join(path.resolve(RouteHandler.CLIENT_PATH), 'index.html');
+    // const index = path.join(path.resolve(RouteHandler.CLIENT_PATH), 'index.html');
     // this.app.use('/', express.static(path.resolve(this.CLIENT_PATH)));
     response.render('index', { name: 'John' });
     // response.sendFile(index);
