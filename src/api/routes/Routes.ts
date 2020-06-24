@@ -32,9 +32,20 @@ export default class Routes {
   }
 
   private configRoutes(): void {
+    this.app.all('*', (req, res, next) => {
+      console.log('request', req.headers);
+      next();
+    });
     this.app.all(
       `${this.SECURE_URL_PREFIX}/*`,
-      (request, response, next) => this.tokenValidator.validateToken(request, response, next),
+      (request, response, next) =>
+        this.tokenValidator.validateToken(
+          request,
+          response,
+          next,
+          'authentication',
+          RouteHandlerInterface.TOKEN_ISSUER
+        ),
       (request, response, next) => this.sessionHandler.validateSession(request, response, next),
       (request, response, next) => {
         next();
@@ -43,7 +54,7 @@ export default class Routes {
   }
 
   private initPublicRoutes(): void {
-    this.app.get('/greet', this.routeHandler.greet);
+    this.app.get('/greet', (req, res) => this.routeHandler.greet(req, res));
     this.app.post('/login', (request, response) => this.routeHandler.login(request, response)); // Sends token
     this.app.get('/', (request, response) => this.routeHandler.index(request, response));
     this.app.post(

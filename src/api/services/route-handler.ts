@@ -25,6 +25,7 @@ export default class RouteHandler implements RouteHandlerInterface {
   private readonly sessionHandler: SessionHandler;
 
   public greet(req: express.Request, res: express.Response): void {
+    console.log('greet', req.headers, req.body);
     res.send({ hello: 'world' });
   }
 
@@ -48,7 +49,7 @@ export default class RouteHandler implements RouteHandlerInterface {
       return;
     }
     const user = (await this.userService.getUserByCredentials(username, password)) || ({} as User);
-    const ticket = await this.tokenGenerator.createTicket(user);
+    const ticket = await this.tokenGenerator.createTicket(user, RouteHandlerInterface.TOKEN_ISSUER);
     this.sessionHandler.addSession(ticket.user);
     response
       .cookie('refreshId', ticket.cookie, {
@@ -69,7 +70,12 @@ export default class RouteHandler implements RouteHandlerInterface {
     const cookie = TokenValidator.verifyCookie(cookieAsString);
     const user = (await this.userService.getUserBySessionId(cookie.sessionId)) || ({} as User);
     try {
-      const ticket = await this.tokenGenerator.renewTicket(cookieAsString, cookie.sessionId, user);
+      const ticket = await this.tokenGenerator.renewTicket(
+        cookieAsString,
+        cookie.sessionId,
+        user,
+        RouteHandlerInterface.TOKEN_ISSUER
+      );
       response.json({
         success: true,
         message: 'Authentication successful!',
@@ -150,7 +156,8 @@ export default class RouteHandler implements RouteHandlerInterface {
     response.sendFile(index);
   }
 
-  public secureIndex(_: any, response: express.Response): void {
+  public secureIndex(req: any, response: express.Response): void {
+    console.log('secureIndex', req.headers);
     response.json({
       success: true,
       secure: true,

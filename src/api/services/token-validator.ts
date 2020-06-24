@@ -34,27 +34,46 @@ export default class TokenValidator implements Validator {
     return JSON.parse(payload) as T;
   }
 
-  public validateToken(request: any, response: express.Response, next: express.NextFunction): express.Response | void {
-    let token = (request.headers['x-access-token'] ||
-      request.headers['authentication'] ||
-      request.headers['authorization']) as string;
+  public validateToken(
+    request: any,
+    response: express.Response,
+    next: express.NextFunction,
+    expectedTokenName: string,
+    issuer: string
+  ): express.Response | void {
+    console.log('validate token', request.body, request.headers);
+    let token = request.headers[expectedTokenName];
     if (!token) {
-      return response.json({
+      console.log('no token');
+      return response.status(400).json({
         success: false,
         message: 'Auth token is not supplied'
       });
     }
-    if (token.startsWith('Bearer')) {
-      token = token.slice(7, token.length);
+    if (!token.startsWith('Bearer')) {
+      console.log('no bearer');
+      return response.status(400).json({
+        success: false,
+        message: 'Wrong token'
+      });
     }
+    token = token.slice(7, token.length);
 
     try {
       console.time('verify');
-      request[this.token] = TokenValidator.verifyToken(token);
+      const tokenObject = TokenValidator.verifyToken(token);
       console.timeEnd('verify');
+      console.log('token:', tokenObject);
+      if (tokenObject.issuer !== issuer) {
+        return response.json(400).json({
+          success: false,
+          message: 'Wrong issuer!'
+        });
+      }
+      request[this.token] = tokenObject;
       next();
     } catch (e) {
-      return response.json({
+      return response.status(400).json({
         success: false,
         message: `Token is not valid: ${e.message}`
       });

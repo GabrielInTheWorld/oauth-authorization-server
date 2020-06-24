@@ -56,6 +56,10 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
     this.subscriptions = [];
   }
 
+  public sayHello(): void {
+    this.auth.sayHello().then(answer => console.log('say Hello:', answer));
+  }
+
   public login(): void {
     this.auth.login(this.loginForm.value);
   }

@@ -10,29 +10,29 @@ import User from '../../core/models/user/user';
 export default class TokenGenerator implements Generator {
   public name = 'TokenGenerator';
 
-  public async createTicket(user: User): Promise<Response> {
+  public async createTicket(user: User, issuer: string): Promise<Response> {
     if (!Object.keys(user).length) {
       throw new Error('user is empty.');
     }
     const sessionId = cryptoRandomString({ length: 32 });
     user.setSession(sessionId);
     const cookie = this.generateCookie(sessionId);
-    const token = this.generateToken(sessionId, user);
+    const token = this.generateToken(sessionId, user, issuer);
     return { cookie, token, user };
   }
 
-  public async renewTicket(cookie: string, sessionId: string, user: User): Promise<Response> {
+  public async renewTicket(cookie: string, sessionId: string, user: User, issuer: string): Promise<Response> {
     try {
-      const token = this.generateToken(sessionId, user);
+      const token = this.generateToken(sessionId, user, issuer);
       return { token, cookie, user };
     } catch {
       throw new Error('Cookie has wrong format.');
     }
   }
 
-  private generateToken(sessionId: string, user: User): string {
+  private generateToken(sessionId: string, user: User, issuer: string): string {
     const token = jwt.sign(
-      { username: user.username, expiresIn: '10m', sessionId, userId: user.userId },
+      { username: user.username, expiresIn: '10m', sessionId, userId: user.userId, issuer },
       Keys.privateKey(),
       {
         expiresIn: '10m'

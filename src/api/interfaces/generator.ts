@@ -2,11 +2,11 @@ import { InjectableClass } from '../../core/modules/decorators';
 import User from '../../core/models/user/user';
 
 export interface Token {
-  payload: {
-    expiresAt: Date;
-    userId: number;
-    sessionId: string;
-  };
+  expiresAt: Date;
+  userId: number;
+  sessionId: string;
+  issuer: string;
+  payload: {};
   signature: string;
 }
 
@@ -22,6 +22,6 @@ export interface Response {
 }
 
 export class Generator extends InjectableClass {
-  public createTicket: (user: User) => Promise<Response>;
-  public renewTicket: (cookie: string, sessionId: string, user: User) => Promise<Response>;
+  public createTicket: (user: User, issuer: string) => Promise<Response>;
+  public renewTicket: (cookie: string, sessionId: string, user: User, issuer: string) => Promise<Response>;
 }

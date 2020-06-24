@@ -3,6 +3,7 @@ import express from 'express';
 import { InjectableClass } from '../../core/modules/decorators';
 
 export class RouteHandlerInterface extends InjectableClass {
+  public static readonly TOKEN_ISSUER = 'OpenSlides_Server';
   public static readonly CLIENT_PATH = 'client/dist/client';
   public static readonly VIEWS_PATH = 'views';
 

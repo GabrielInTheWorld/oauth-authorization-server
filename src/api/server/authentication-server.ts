@@ -45,28 +45,17 @@ export default class AuthenticationServer implements BaseServer {
   }
 
   private initializeConfig(): void {
-    this.app.use(
-      (req, res, next) => this.corsFunction(req, res, next)
-      // cors({
-      //   allowedHeaders:
-      //     'Origin, X-Requested-With, Content-Type, X-Content-Type, Authentication,
-      //  Authorization, X-Access-Token, Accept',
-      //   credentials: true,
-      //   // origin: this.port === 8010 ? 'http://localhost:4210' : '*',
-      //   // origin: '*',
-      //   methods: 'OPTIONS, GET, POST, PUT, DELETE'
-      // })
-    );
+    this.app.use((req, res, next) => this.corsFunction(req, res, next));
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(express.json());
     this.app.use(cookieParser());
   }
 
   private initializeRoutes(): void {
-    this.routes = new Routes(this.app);
-    this.routes.initRoutes();
     this.oauthRoutes = new OAuthRoutes(this.app);
     this.oauthRoutes.initRoutes();
+    this.routes = new Routes(this.app);
+    this.routes.initRoutes();
   }
 
   private initClient(): void {
@@ -78,7 +67,9 @@ export default class AuthenticationServer implements BaseServer {
 
   private corsFunction(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const requestingOrigin = req.headers.origin || '';
+    console.log('cors:', requestingOrigin, req.headers, req.body);
     if (AuthenticationServer.ALLOWED_ORIGINS.indexOf(requestingOrigin) > -1) {
+      console.log('cors is valid');
       res.setHeader('Access-Control-Allow-Origin', requestingOrigin);
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST, DELETE, PUT');

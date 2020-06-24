@@ -23,13 +23,20 @@ export class AuthService {
     this.whoAmI(() => this.initiateSubject.next(true));
   }
 
+  public sayHello(): Promise<void> {
+    return this.http.get('/api/hello', null, new HttpHeaders({ authentication: this.accessToken }));
+  }
+
+  public helloApi(): Promise<void> {
+    return this.http.get('/api/hello', null, new HttpHeaders().set('authentication', this.accessToken));
+  }
+
   public login(credentials: { username: string; password: string }): void {
     this.http.post<LoginAnswer>('/login', credentials).then(answer => {
       console.log('answer', answer);
       if (answer && answer.success) {
         this.accessToken = answer.token;
       }
-      console.log('document.cookies', document.cookie);
     });
   }
 

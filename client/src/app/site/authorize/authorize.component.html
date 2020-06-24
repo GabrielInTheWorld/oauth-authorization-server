@@ -7,6 +7,7 @@
     <h1 class="underscore">OpenSlides4 Authentifizierungsdienst</h1>
     <button mat-button (click)="whoAmI()">Who am I</button>
     <ng-container *ngIf="isAuthenticated()">
+      <button mat-button (click)="sayHello()">Sag Hallo</button>
       <button mat-button (click)="logout()">Abmelden</button>
     </ng-container>
     <ng-container *ngIf="!isAuthenticated()">

@@ -55,6 +55,11 @@ export class OAuthHandler implements OAuthHandlerInterface {
 
   private readonly requests: any = {};
 
+  public greeting(req: express.Request, res: express.Response): void {
+    console.log('incoming request for greetings', req.headers, req.body);
+    res.json({ success: true, message: 'hello world in OAuth 2.0' });
+  }
+
   public async register(req: express.Request, res: express.Response): Promise<void> {}
 
   public async refresh(req: express.Request, res: express.Response): Promise<void> {}
@@ -120,13 +125,13 @@ export class OAuthHandler implements OAuthHandlerInterface {
           this.sendError(res, 'Provide a user!');
           return;
         }
-        const ticket = await this.tokenGenerator.createTicket(user);
+        const ticket = await this.tokenGenerator.createTicket(user, OAuthHandlerInterface.TOKEN_ISSUER);
 
         res
           .status(200)
           .cookie('oauthRefreshToken', ticket.cookie, { maxAge: 7200000, httpOnly: true, secure: false })
           .json({
-            access_token: ticket.token,
+            access_token: `Bearer ${ticket.token}`,
             token_type: 'Bearer'
           });
       }
