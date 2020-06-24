@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpService, HTTPMethod, Answer } from './http.service';
 import { HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 interface LoginAnswer extends Answer {
   token: string;
@@ -10,9 +11,17 @@ interface LoginAnswer extends Answer {
   providedIn: 'root'
 })
 export class AuthService {
+  public get InitiateObservable(): Observable<boolean> {
+    return this.initiateSubject.asObservable();
+  }
+
+  private readonly initiateSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
+
   private accessToken = null;
 
-  public constructor(private http: HttpService) {}
+  public constructor(private http: HttpService) {
+    this.whoAmI(() => this.initiateSubject.next(true));
+  }
 
   public login(credentials: { username: string; password: string }): void {
     this.http.post<LoginAnswer>('/login', credentials).then(answer => {
@@ -22,6 +31,18 @@ export class AuthService {
       }
       console.log('document.cookies', document.cookie);
     });
+  }
+
+  public whoAmI(callback?: () => void): void {
+    this.http
+      .post<LoginAnswer>('/who-am-i')
+      .then(answer => {
+        console.log('answer', answer);
+        if (answer && answer.success) {
+          this.accessToken = answer.token;
+        }
+      })
+      .then(() => (callback ? callback() : undefined));
   }
 
   public logout(): void {

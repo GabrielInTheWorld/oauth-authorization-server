@@ -11,7 +11,7 @@ export class Server {
     return Server.PORT;
   }
 
-  @Inject(BaseServer)
+  @Inject(BaseServer, { port: Server.PORT })
   private readonly httpServer: AuthenticationServer;
 
   public start(): void {

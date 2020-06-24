@@ -15,9 +15,9 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
     return this.auth.isAuthenticated() ? 'green' : 'red';
   }
 
-  // public get hasInitiated(): boolean {
-  //   return this.pHasInitiated;
-  // }
+  public get hasInitiated(): boolean {
+    return this.pHasInitiated;
+  }
 
   public get disableConfirmButton(): boolean {
     return !this.loginFormHasValues;
@@ -25,7 +25,7 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
 
   public loginForm: FormGroup;
 
-  // private _hasInitiated = false
+  private pHasInitiated = false;
   private loginFormHasValues = false;
 
   private subscriptions: Subscription[] = [];
@@ -43,7 +43,8 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.loginForm.valueChanges.subscribe((value: { username: string; password: string }) => {
         this.checkLoginForm(value);
-      })
+      }),
+      this.auth.InitiateObservable.subscribe(hasInitiated => (this.pHasInitiated = hasInitiated))
     );
     this.checkLoginForm(this.loginForm.value);
   }
@@ -57,13 +58,6 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
 
   public login(): void {
     this.auth.login(this.loginForm.value);
-    // this.http.post<LoginAnswer>('/login', credentials).then(answer => {
-    //   console.log('answer', answer);
-    //   if (answer && answer.success) {
-    //     this.accessToken = answer.token;
-    //   }
-    //   console.log('document.cookies', document.cookie);
-    // });
   }
 
   public clear(): void {
@@ -74,9 +68,9 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
     this.auth.logout();
   }
 
-  public approve(): void {}
-
-  public deny(): void {}
+  public whoAmI(): void {
+    this.auth.whoAmI();
+  }
 
   public isAuthenticated(): boolean {
     return this.auth.isAuthenticated();

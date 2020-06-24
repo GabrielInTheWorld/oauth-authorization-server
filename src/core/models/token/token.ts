@@ -1,7 +1,7 @@
-import Client from '../client/client';
+import User from '../user/user';
 
 export default interface Token {
-    sessionId: string;
-    clientId: string;
-    client: Client;
+  sessionId: string;
+  userId: string;
+  user: User;
 }

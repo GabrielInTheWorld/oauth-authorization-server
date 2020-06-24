@@ -1,21 +1,13 @@
 <mat-card class="dashboard-card flex-center">
-  <!-- <ng-container *ngIf="!hasInitiated">
+  <ng-container *ngIf="!hasInitiated">
     <app-loading-spinner></app-loading-spinner>
-  </ng-container> -->
+  </ng-container>
   <ng-container *ngIf="true">
     <app-indicator [color]="color"></app-indicator>
     <h1 class="underscore">OpenSlides4 Authentifizierungsdienst</h1>
-    <!-- <button mat-button (click)="whoAmI()">Who am I</button> -->
+    <button mat-button (click)="whoAmI()">Who am I</button>
     <ng-container *ngIf="isAuthenticated()">
       <button mat-button (click)="logout()">Abmelden</button>
-
-      <form ngNoForm action="/approve" method="POST">
-        <input type="hidden" name="reqid" value="" />
-        <button type="submit" name="approve" value="Approve">Approve</button>
-        <button type="submit" name="deny" value="Deny">Deny</button>
-      </form>
-      <!-- <button mat-raised-button color="warn" (click)="approve()">Freigabe genehmigen</button>
-      <button mat-button (click)="deny()">Verweigern</button> -->
     </ng-container>
     <ng-container *ngIf="!isAuthenticated()">
       <form [formGroup]="loginForm">

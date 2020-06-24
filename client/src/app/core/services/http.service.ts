@@ -57,7 +57,7 @@ export class HttpService {
     const options = {
       body: data,
       headers: customHeader ? customHeader : this.defaultHeaders,
-      withCredentials: false,
+      withCredentials: true,
       responseType: responseType as 'json'
     };
 

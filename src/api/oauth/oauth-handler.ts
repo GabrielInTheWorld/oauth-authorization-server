@@ -8,14 +8,16 @@ import shajs from 'sha.js';
 import request from 'sync-request';
 import url from 'url';
 
-import { ClientHandler } from '../../core/models/client/client-handler';
-import { ClientHandlerInterface } from '../../core/models/client/client-handler.interface';
 import { Keys } from '../../config';
 import { Constructable, InjectService, Inject } from '../../core/modules/decorators';
+import { Generator } from '../interfaces/generator';
 import GlobalStorage from '../../adapter/services/global-storage';
 import { Modules } from '../../model-services/modules';
 import { OAuthHandlerInterface } from './oauth-handler-interface';
 import RouteHandler from '../services/route-handler';
+import TokenGenerator from '../services/token-generator';
+import UserService from '../../core/models/user/user-service';
+import { UserServiceInterface } from '../../core/models/user/user-service.interface';
 import { Server } from '../..';
 
 type CodeChallengeMethod = undefined | 'S256';
@@ -45,15 +47,18 @@ interface UrlOptions {
 export class OAuthHandler implements OAuthHandlerInterface {
   public readonly name = 'OAuthHandler';
 
-  @InjectService(GlobalStorage)
-  private readonly storage: GlobalStorage;
+  // @InjectService(GlobalStorage)
+  // private readonly storage: GlobalStorage;
 
-  @Inject(ClientHandlerInterface)
-  private readonly clientHandler: ClientHandler;
+  @Inject(Generator)
+  private readonly tokenGenerator: TokenGenerator;
+
+  @InjectService(UserService)
+  private readonly userService: UserService;
 
   private readonly registeredClients: Client[] = [
     {
-      clientName: 'OpenSlides',
+      clientName: 'OAuth2-App',
       clientId: 'oauth-client-1',
       state: '',
       scope: 'user'
@@ -64,14 +69,22 @@ export class OAuthHandler implements OAuthHandlerInterface {
 
   private readonly requests: any = {};
 
-  public register(req: express.Request, res: express.Response): void {}
+  public async register(req: express.Request, res: express.Response): Promise<void> {}
+
+  public async refresh(req: express.Request, res: express.Response): Promise<void> {}
 
   public async generateToken(req: express.Request, res: express.Response): Promise<void> {
+    console.log('generateToken', req.body);
     const authorizationHeader = req.headers.authorization;
     let clientId;
     let clientSecret;
     let clientCredentials;
     let codeChallenge;
+
+    if (!req.body.user_id) {
+      this.sendError(res, 'Provide a user!');
+      return;
+    }
 
     if (authorizationHeader) {
       clientCredentials = this.decodeClientCredentials(authorizationHeader);
@@ -87,6 +100,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
         return;
       }
 
+      const userId = req.body.user_id;
       clientId = req.body.client_id;
       const client = this.find<Client>(this.registeredClients, 'clientId', clientId);
       console.log('client', client);
@@ -119,12 +133,21 @@ export class OAuthHandler implements OAuthHandlerInterface {
       if (code) {
         delete this.codes[req.body.code];
 
-        const accessToken = jwt.sign({ ...client, expiresIn: '15m' }, Keys.privateKey(), { expiresIn: '15m' });
+        const user = await this.userService.getUserByUserId(userId);
+        if (!user) {
+          this.sendError(res, 'Provide a user!');
+          return;
+        }
+        // const ticket = await this.tokenGenerator.createOAuthTicket(user);
+        const ticket = await this.tokenGenerator.createTicket(user);
 
-        res.status(200).json({
-          access_token: accessToken,
-          token_type: 'Bearer'
-        });
+        res
+          .status(200)
+          .cookie('oauthRefreshToken', ticket.cookie, { maxAge: 7200000, httpOnly: true, secure: false })
+          .json({
+            access_token: ticket.token,
+            token_type: 'Bearer'
+          });
       }
     }
 
@@ -211,7 +234,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   public async authorize(req: express.Request, res: express.Response): Promise<void> {
-    console.log('authorize callback', req.body, req.query);
+    console.log('authorize callback', req.query);
     const queries = (req.query as unknown) as UrlOptions;
     if (!Object.keys(queries).length) {
       res.send('No query-parameter');
@@ -235,23 +258,26 @@ export class OAuthHandler implements OAuthHandlerInterface {
       client.redirectUri = queries.redirect_uri;
 
       this.requests[reqid] = queries;
-      // res.sendFile(this.clientHandler.getClientRoute());
-      res.render('authorize', {
-        client,
-        reqid,
-        onAuthenticate: (username: string, password: string) => this.authenticate(username, password)
-      });
+      res.render('authorize', { client, reqid });
     }
   }
 
   public async approve(req: express.Request, res: express.Response): Promise<void> {
     console.log('approved body', req.body);
+    console.log('user service', this.userService);
 
     const reqid = req.body.reqid;
     const query = this.requests[reqid];
+    const user = await this.userService.getUserByCredentials(req.body.username, req.body.password);
+    console.log('user in OAuth', user);
 
     if (!query) {
       res.send('There is no matching request');
+      return;
+    }
+
+    if (!user) {
+      res.send('No user provided');
       return;
     }
 
@@ -259,7 +285,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
       if (query.response_type === 'code') {
         const code = this.generateRandomString();
         this.codes[code] = { request: query };
-        const urlParsed = this.buildUrl(query.redirect_uri, { code, state: query.state });
+        const urlParsed = this.buildUrl(query.redirect_uri, { code, state: query.state, user_id: user.userId });
         res.redirect(urlParsed);
         return;
       } else {
@@ -272,10 +298,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
       res.redirect(urlParsed);
       return;
     }
-  }
-
-  private authenticate(username: string, password: string): void {
-    console.log('username', username, password);
   }
 
   private find<T>(array: any[], param: keyof T, value: string): T {

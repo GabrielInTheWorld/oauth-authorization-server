@@ -1,60 +1,74 @@
 import cookieParser from 'cookie-parser';
+import cryptoRandomString from 'crypto-random-string';
 import jwt from 'jsonwebtoken';
-import { uuid } from 'uuidv4';
 
-import Client from '../../core/models/client/client';
-import ClientService from '../../core/models/client/client-service';
-import { ClientServiceInterface } from '../../core/models/client/client-service.interface';
 import { Keys } from '../../config';
 import { Constructable, Inject } from '../../core/modules/decorators';
 import { Cookie, Generator, Response } from '../interfaces/generator';
+import User from '../../core/models/user/user';
+import UserService from '../../core/models/user/user-service';
+import { UserServiceInterface } from '../../core/models/user/user-service.interface';
 
 @Constructable(Generator)
 export default class TokenGenerator implements Generator {
   public name = 'TokenGenerator';
 
-  @Inject(ClientServiceInterface)
-  private readonly clientService: ClientService;
+  // @Inject(UserServiceInterface)
+  // private readonly userService: UserService;
 
-  public constructor() {
-    this.init();
+  // public constructor() {
+  //   // console.log('init TokenGenerator');
+  //   this.init();
+  // }
+
+  public async createOAuthTicket(user: User): Promise<Response> {
+    const sessionId = cryptoRandomString({ length: 32 });
+    const cookie = jwt.sign({ sessionId }, Keys.privateCookieKey(), { expiresIn: '1d' });
+    user.setSession(sessionId);
+    const token = this.generateToken(sessionId, user);
+    return { cookie, token, user };
   }
 
-  public async createTicket(username: string, password: string): Promise<Response> {
-    const client = await this.clientService.getClientByCredentials(username, password);
-    if (client) {
-      const sessionId = uuid();
-      const cookie = jwt.sign({ sessionId }, Keys.privateCookieKey(), { expiresIn: '1d' });
-      client.setSession(sessionId);
-      const token = this.generateToken(sessionId, client);
-      return { cookie, token, client };
-    } else {
-      throw new Error('Client is not defined.');
+  public async createTicket(user: User): Promise<Response> {
+    // const user = await this.userService.getUserByCredentials(username, password);
+    console.log('user', user);
+    if (!Object.keys(user).length) {
+      throw new Error('user is empty.');
     }
+    const sessionId = cryptoRandomString({ length: 32 });
+    // const cookie = jwt.sign({ sessionId }, Keys.privateCookieKey(), { expiresIn: '1d' });
+    user.setSession(sessionId);
+    const cookie = this.generateCookie(sessionId);
+    const token = this.generateToken(sessionId, user);
+    return { cookie, token, user };
+    // if (user) {
+    // } else {
+    //   throw new Error('User is not defined.');
+    // }
   }
 
-  public async renewTicket(cookieAsString: string): Promise<Response> {
+  public async renewTicket(cookie: string, sessionId: string, user: User): Promise<Response> {
     try {
-      const refreshId = this.verifyCookie(cookieAsString);
-      const client = (await this.clientService.getClientBySessionId(refreshId.sessionId)) || ({} as Client);
-      const token = this.generateToken(refreshId.sessionId, client);
-      return { token, cookie: cookieAsString, client };
+      // const refreshId = this.verifyCookie(cookieAsString);
+      // const user = (await this.userService.getUserBySessionId(refreshId.sessionId)) || ({} as User);
+      const token = this.generateToken(sessionId, user);
+      return { token, cookie, user };
     } catch {
       throw new Error('Cookie has wrong format.');
     }
   }
 
-  public verifyCookie(cookieAsString: string): Cookie {
-    return jwt.verify(cookieAsString, Keys.privateCookieKey()) as Cookie;
-  }
+  // public verifyCookie(cookieAsString: string): Cookie {
+  //   return jwt.verify(cookieAsString, Keys.privateCookieKey()) as Cookie;
+  // }
 
-  private init(): void {
-    this.insertMockData();
-  }
+  // private init(): void {
+  //   // this.insertMockData();
+  // }
 
-  private generateToken(sessionId: string, client: Client): string {
+  private generateToken(sessionId: string, user: User): string {
     const token = jwt.sign(
-      { username: client.username, expiresIn: '10m', sessionId, clientId: client.clientId },
+      { username: user.username, expiresIn: '10m', sessionId, userId: user.userId },
       Keys.privateKey(),
       {
         expiresIn: '10m'
@@ -63,10 +77,15 @@ export default class TokenGenerator implements Generator {
     return token;
   }
 
-  private async insertMockData(): Promise<void> {
-    if (this.clientService) {
-      await this.clientService.create('demo', 'demo');
-      await this.clientService.getClientByCredentials('demo', 'demo');
-    }
+  private generateCookie(sessionId: string): string {
+    const cookie = jwt.sign({ sessionId }, Keys.privateCookieKey(), { expiresIn: '1d' });
+    return cookie;
   }
+
+  // private async insertMockData(): Promise<void> {
+  //   if (this.userService) {
+  //     await this.userService.create('demo', 'demo');
+  //     await this.userService.getUserByCredentials('demo', 'demo');
+  //   }
+  // }
 }

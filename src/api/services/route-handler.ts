@@ -1,22 +1,22 @@
 import express from 'express';
 import path from 'path';
 
-import ClientService from '../../core/models/client/client-service';
-import { ClientServiceInterface } from '../../core/models/client/client-service.interface';
 import { Constructable, Inject, InjectService } from '../../core/modules/decorators';
 import { Cookie, Generator } from '../interfaces/generator';
 import { RouteHandlerInterface } from '../interfaces/route-handler-interface';
 import SessionHandler from './session-handler';
 import TokenGenerator from './token-generator';
+import TokenValidator from './token-validator';
+import User from '../../core/models/user/user';
+import UserService from '../../core/models/user/user-service';
+import { UserServiceInterface } from '../../core/models/user/user-service.interface';
 
 @Constructable(RouteHandlerInterface)
 export default class RouteHandler implements RouteHandlerInterface {
-  public static readonly VIEWS_PATH = 'views';
-
   public name = 'RouteHandler';
 
-  @Inject(ClientServiceInterface)
-  private readonly clientService: ClientService;
+  @InjectService(UserService)
+  private readonly userService: UserService;
 
   @Inject(Generator)
   private readonly tokenGenerator: TokenGenerator;
@@ -41,32 +41,36 @@ export default class RouteHandler implements RouteHandlerInterface {
       return;
     }
 
-    if (this.clientService.hasClient(username, password)) {
-      const ticket = await this.tokenGenerator.createTicket(username, password);
-      this.sessionHandler.addSession(ticket.client);
-      response
-        .cookie('refreshId', ticket.cookie, {
-          maxAge: 7200000,
-          httpOnly: true,
-          secure: false
-        })
-        .send({
-          success: true,
-          message: 'Authentication successful!',
-          token: ticket.token
-        });
-    } else {
+    if (!(await this.userService.hasUser(username, password))) {
       response.status(403).json({
         success: false,
         message: 'Incorrect username or password'
       });
+      return;
     }
+    const user = (await this.userService.getUserByCredentials(username, password)) || ({} as User);
+    const ticket = await this.tokenGenerator.createTicket(user);
+    this.sessionHandler.addSession(ticket.user);
+    response
+      .cookie('refreshId', ticket.cookie, {
+        maxAge: 7200000,
+        httpOnly: true,
+        secure: false
+      })
+      .send({
+        success: true,
+        message: 'Authentication successful!',
+        token: ticket.token
+      });
   }
 
   public async whoAmI(request: express.Request, response: express.Response): Promise<void> {
-    const cookie = request.cookies['refreshId'];
+    const cookieAsString = request.cookies['refreshId'];
+    const c = TokenValidator.parseCookie(cookieAsString);
+    const cookie = TokenValidator.verifyCookie(cookieAsString);
+    const user = (await this.userService.getUserBySessionId(cookie.sessionId)) || ({} as User);
     try {
-      const ticket = await this.tokenGenerator.renewTicket(cookie);
+      const ticket = await this.tokenGenerator.renewTicket(cookieAsString, cookie.sessionId, user);
       response.json({
         success: true,
         message: 'Authentication successful!',
@@ -143,16 +147,8 @@ export default class RouteHandler implements RouteHandlerInterface {
   }
 
   public index(_: any, response: express.Response): void {
-    // response.json({
-    //     success: true,
-    //     message: 'Hello World'
-    // });
-    // const index = path.join(path.resolve(RouteHandler.CLIENT_PATH), 'index.html');
-    // this.app.use('/', express.static(path.resolve(this.CLIENT_PATH)));
-    response.render('index', { name: 'John' });
-    // response.sendFile(index);
-    // this.app.get('*', (_, res) => {
-    // });
+    const index = path.join(path.resolve(RouteHandlerInterface.CLIENT_PATH), 'index.html');
+    response.sendFile(index);
   }
 
   public secureIndex(_: any, response: express.Response): void {
