@@ -1,24 +1,13 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import path from 'path';
-import qs from 'qs';
-import querystring from 'querystring';
-import randomstring from 'randomstring';
 import shajs from 'sha.js';
-import request from 'sync-request';
 import url from 'url';
 
-import { Keys } from '../../config';
 import { Constructable, InjectService, Inject } from '../../core/modules/decorators';
 import { Generator } from '../interfaces/generator';
-import GlobalStorage from '../../adapter/services/global-storage';
 import { Modules } from '../../model-services/modules';
 import { OAuthHandlerInterface } from './oauth-handler-interface';
-import RouteHandler from '../services/route-handler';
 import TokenGenerator from '../services/token-generator';
 import UserService from '../../core/models/user/user-service';
-import { UserServiceInterface } from '../../core/models/user/user-service.interface';
-import { Server } from '../..';
 
 type CodeChallengeMethod = undefined | 'S256';
 
@@ -46,9 +35,6 @@ interface UrlOptions {
 @Constructable(OAuthHandlerInterface)
 export class OAuthHandler implements OAuthHandlerInterface {
   public readonly name = 'OAuthHandler';
-
-  // @InjectService(GlobalStorage)
-  // private readonly storage: GlobalStorage;
 
   @Inject(Generator)
   private readonly tokenGenerator: TokenGenerator;
@@ -91,7 +77,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
       clientId = clientCredentials.clientId;
       clientSecret = clientCredentials.clientSecret;
     }
-    console.log('generateToken', req.body);
 
     if (req.body.client_id) {
       if (clientId) {
@@ -103,14 +88,12 @@ export class OAuthHandler implements OAuthHandlerInterface {
       const userId = req.body.user_id;
       clientId = req.body.client_id;
       const client = this.find<Client>(this.registeredClients, 'clientId', clientId);
-      console.log('client', client);
       if (!client) {
         this.sendError(res, 'invalid client');
         return;
       }
       if (req.body.code_verifier) {
         codeChallenge = this.generateCodeChallenge(client.codeChallengeMethod, req.body.code_verifier);
-        console.log('codeChallenge', codeChallenge);
         if (codeChallenge !== client.codeChallenge) {
           this.sendError(res, 'invalid code verifier');
           return;
@@ -129,7 +112,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
       }
 
       const code = this.codes[req.body.code];
-      console.log('received code', code);
       if (code) {
         delete this.codes[req.body.code];
 
@@ -138,7 +120,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
           this.sendError(res, 'Provide a user!');
           return;
         }
-        // const ticket = await this.tokenGenerator.createOAuthTicket(user);
         const ticket = await this.tokenGenerator.createTicket(user);
 
         res
@@ -150,87 +131,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
           });
       }
     }
-
-    // if (req.body.grant_type == 'authorization_code') {
-    //   var code = codes[req.body.code];
-
-    //   if (code) {
-    //     delete codes[req.body.code]; // burn our code, it's been used
-    //     if (code.request.client_id == clientId) {
-    //       var access_token = randomstring.generate();
-    //       var refresh_token = randomstring.generate();
-
-    //       nosql.insert({ access_token: access_token, client_id: clientId, scope: code.scope });
-    //       nosql.insert({ refresh_token: refresh_token, client_id: clientId, scope: code.scope });
-
-    //       console.log('Issuing access token %s', access_token);
-
-    //       var token_response = {
-    //         access_token: access_token,
-    //         token_type: 'Bearer',
-    //         refresh_token: refresh_token,
-    //         scope: code.scope.join(' ')
-    //       };
-
-    //       res.status(200).json(token_response);
-    //       console.log('Issued tokens for code %s', req.body.code);
-
-    //       return;
-    //     } else {
-    //       console.log('Client mismatch, expected %s got %s', code.request.client_id, clientId);
-    //       res.status(400).json({ error: 'invalid_grant' });
-    //       return;
-    //     }
-    //   } else {
-    //     console.log('Unknown code, %s', req.body.code);
-    //     res.status(400).json({ error: 'invalid_grant' });
-    //     return;
-    //   }
-    // } else if (req.body.grant_type == 'refresh_token') {
-    //   nosql.one(
-    //     function(token) {
-    //       if (token.refresh_token == req.body.refresh_token) {
-    //         return token;
-    //       }
-    //     },
-    //     function(err, token) {
-    //       if (token) {
-    //         console.log('We found a matching refresh token: %s', req.body.refresh_token);
-    //         if (token.client_id != clientId) {
-    //           nosql.remove(
-    //             function(found) {
-    //               return found == token;
-    //             },
-    //             function() {}
-    //           );
-    //           res.status(400).json({ error: 'invalid_grant' });
-    //           return;
-    //         }
-
-    //         /*
-    //          * Bonus: handle scopes for a refresh token request appropriately
-    //          */
-
-    //         var access_token = randomstring.generate();
-    //         nosql.insert({ access_token: access_token, client_id: clientId });
-    //         var token_response = {
-    //           access_token: access_token,
-    //           token_type: 'Bearer',
-    //           refresh_token: token.refresh_token
-    //         };
-    //         res.status(200).json(token_response);
-    //         return;
-    //       } else {
-    //         console.log('No matching token was found.');
-    //         res.status(400).json({ error: 'invalid_grant' });
-    //         return;
-    //       }
-    //     }
-    //   );
-    // } else {
-    //   console.log('Unknown grant type %s', req.body.grant_type);
-    //   res.status(400).json({ error: 'unsupported_grant_type' });
-    // }
   }
 
   public async authorize(req: express.Request, res: express.Response): Promise<void> {
@@ -264,12 +164,10 @@ export class OAuthHandler implements OAuthHandlerInterface {
 
   public async approve(req: express.Request, res: express.Response): Promise<void> {
     console.log('approved body', req.body);
-    console.log('user service', this.userService);
 
     const reqid = req.body.reqid;
     const query = this.requests[reqid];
     const user = await this.userService.getUserByCredentials(req.body.username, req.body.password);
-    console.log('user in OAuth', user);
 
     if (!query) {
       res.send('There is no matching request');
@@ -343,7 +241,6 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   private generateCodeChallenge(method: CodeChallengeMethod, codeVerifier: string): string {
-    console.log('generateCodeChallenge', method, codeVerifier);
     if (method) {
       return new shajs.sha256().update(codeVerifier).digest('hex');
     }

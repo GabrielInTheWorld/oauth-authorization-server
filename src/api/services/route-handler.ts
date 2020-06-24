@@ -25,7 +25,6 @@ export default class RouteHandler implements RouteHandlerInterface {
   private readonly sessionHandler: SessionHandler;
 
   public greet(req: express.Request, res: express.Response): void {
-    console.log('greeting', req.body);
     res.send({ hello: 'world' });
   }
 
