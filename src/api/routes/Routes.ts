@@ -1,6 +1,8 @@
 import * as express from 'express';
 
 import { Inject, InjectService } from '../../core/modules/decorators';
+import { OAuthHandler } from '../oauth/oauth-handler';
+import { OAuthHandlerInterface } from '../oauth/oauth-handler-interface';
 import RouteHandler from '../services/route-handler';
 import { RouteHandlerInterface } from '../interfaces/route-handler-interface';
 import SessionHandler from '../services/session-handler';
@@ -15,6 +17,9 @@ export default class Routes {
 
   @Inject(RouteHandlerInterface)
   private readonly routeHandler: RouteHandler;
+
+  @Inject(OAuthHandlerInterface)
+  private readonly oauthHandler: OAuthHandler;
 
   @InjectService(SessionHandler)
   private readonly sessionHandler: SessionHandler;
@@ -38,14 +43,7 @@ export default class Routes {
     });
     this.app.all(
       `${this.SECURE_URL_PREFIX}/*`,
-      (request, response, next) =>
-        this.tokenValidator.validateToken(
-          request,
-          response,
-          next,
-          'authentication',
-          RouteHandlerInterface.TOKEN_ISSUER
-        ),
+      (request, response, next) => this.tokenValidator.validateToken(request, response, next),
       (request, response, next) => this.sessionHandler.validateSession(request, response, next),
       (request, response, next) => {
         next();
@@ -54,7 +52,6 @@ export default class Routes {
   }
 
   private initPublicRoutes(): void {
-    this.app.get('/greet', (req, res) => this.routeHandler.greet(req, res));
     this.app.post('/login', (request, response) => this.routeHandler.login(request, response)); // Sends token
     this.app.get('/', (request, response) => this.routeHandler.index(request, response));
     this.app.post(
@@ -72,7 +69,24 @@ export default class Routes {
       this.getSecureUrl('/clear-all-sessions-except-themselves'),
       this.routeHandler.clearAllSessionsExceptThemselves
     );
+    this.app.post(this.getSecureUrl('/register-oauth'), (req, res) => this.oauthHandler.register(req, res));
     this.app.delete(this.getSecureUrl('/clear-session-by-id'), this.routeHandler.clearSessionById);
+
+    /**
+     * Routes for motions - only for presenting this app
+     */
+    this.app.get(this.getSecureUrl('/all-motions'), (req, res) => {
+      this.routeHandler.getAllMotions(req, res);
+    });
+    this.app.get(this.getSecureUrl('/get-motion'), (req, res) => {
+      this.routeHandler.getMotionById(req, res);
+    });
+    this.app.put(this.getSecureUrl('/update-motion'), (req, res) => {
+      this.routeHandler.updateMotion(req, res);
+    });
+    this.app.post(this.getSecureUrl('/create-motion'), (req, res) => {
+      this.routeHandler.createMotion(req, res);
+    });
   }
 
   private getSecureUrl(urlPath: string): string {

@@ -9,7 +9,8 @@ import TokenGenerator from './token-generator';
 import TokenValidator from './token-validator';
 import User from '../../core/models/user/user';
 import UserService from '../../core/models/user/user-service';
-import { UserServiceInterface } from '../../core/models/user/user-service.interface';
+import { MotionService } from '../../core/models/motions/motion-service';
+import { Motion } from '../../core/models/motions/motion';
 
 @Constructable(RouteHandlerInterface)
 export default class RouteHandler implements RouteHandlerInterface {
@@ -18,16 +19,14 @@ export default class RouteHandler implements RouteHandlerInterface {
   @InjectService(UserService)
   private readonly userService: UserService;
 
+  @InjectService(MotionService)
+  private readonly motionService: MotionService;
+
   @Inject(Generator)
   private readonly tokenGenerator: TokenGenerator;
 
   @InjectService(SessionHandler)
   private readonly sessionHandler: SessionHandler;
-
-  public greet(req: express.Request, res: express.Response): void {
-    console.log('greet', req.headers, req.body);
-    res.send({ hello: 'world' });
-  }
 
   public async login(request: express.Request, response: express.Response): Promise<void> {
     const username = request.body.username;
@@ -41,15 +40,14 @@ export default class RouteHandler implements RouteHandlerInterface {
       return;
     }
 
-    if (!(await this.userService.hasUser(username, password))) {
+    if (!this.userService.hasUser(username, password)) {
       response.status(403).json({
         success: false,
         message: 'Incorrect username or password'
       });
-      return;
     }
     const user = (await this.userService.getUserByCredentials(username, password)) || ({} as User);
-    const ticket = await this.tokenGenerator.createTicket(user, RouteHandlerInterface.TOKEN_ISSUER);
+    const ticket = await this.tokenGenerator.createTicket(user);
     this.sessionHandler.addSession(ticket.user);
     response
       .cookie('refreshId', ticket.cookie, {
@@ -60,26 +58,20 @@ export default class RouteHandler implements RouteHandlerInterface {
       .send({
         success: true,
         message: 'Authentication successful!',
-        token: ticket.token
+        token: `bearer ${ticket.token}`
       });
   }
 
   public async whoAmI(request: express.Request, response: express.Response): Promise<void> {
     const cookieAsString = request.cookies['refreshId'];
-    const c = TokenValidator.parseCookie(cookieAsString);
     const cookie = TokenValidator.verifyCookie(cookieAsString);
     const user = (await this.userService.getUserBySessionId(cookie.sessionId)) || ({} as User);
     try {
-      const ticket = await this.tokenGenerator.renewTicket(
-        cookieAsString,
-        cookie.sessionId,
-        user,
-        RouteHandlerInterface.TOKEN_ISSUER
-      );
+      const ticket = await this.tokenGenerator.renewTicket(cookieAsString, cookie.sessionId, user);
       response.json({
         success: true,
         message: 'Authentication successful!',
-        token: ticket.token
+        token: `bearer ${ticket.token}`
       });
     } catch {
       response.json({
@@ -156,12 +148,41 @@ export default class RouteHandler implements RouteHandlerInterface {
     response.sendFile(index);
   }
 
-  public secureIndex(req: any, response: express.Response): void {
-    console.log('secureIndex', req.headers);
+  public secureIndex(_: any, response: express.Response): void {
     response.json({
       success: true,
       secure: true,
       message: 'Yeah! A secured page'
+    });
+  }
+
+  public getAllMotions(req: express.Request, res: express.Response): void {
+    res.json({
+      success: true,
+      motions: this.motionService.getAllMotions()
+    });
+  }
+
+  public getMotionById(req: express.Request, res: express.Response): void {
+    res.json({
+      success: true,
+      motion: this.motionService.getMotionById(req.body.motion_id)
+    });
+  }
+
+  public async createMotion(req: express.Request, res: express.Response): Promise<void> {
+    const motion = await this.motionService.create(req.body.motion_title, req.body.motion_description);
+    res.json({
+      success: true,
+      motion
+    });
+  }
+
+  public async updateMotion(req: express.Request, res: express.Response): Promise<void> {
+    const motion = this.motionService.updateMotion(req.body.motion_id, req.body as Partial<Motion>);
+    res.json({
+      success: true,
+      motion
     });
   }
 }

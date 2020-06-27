@@ -9,8 +9,8 @@
     "scripts": {
         "postinstall": "npm run uptodate",
         "cleanup": "npm run prettify-write && npm run linter-write",
-        "start": "node build/index.js",
-        "dev": "nodemon src/index.ts",
+        "start": "nodemon src/index.ts",
+        "prod": "node build/index.js",
         "linter-write": "tslint --fix -c ./tslint.json 'src/**/*{.ts,.tsx}'",
         "prettify-write": "prettier --config ./.prettierrc --write \"src/**/*{.ts,.js,.json,.css,.scss}\"",
         "lint-check": "tslint -c ./tslint.json 'src/**/*{.ts,.tsx}'",

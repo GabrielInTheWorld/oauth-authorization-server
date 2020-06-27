@@ -4,13 +4,14 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { IndicatorColor } from 'src/app/ui/components/indicator/indicator.component';
 import { Subscription } from 'rxjs';
+import { BaseComponent } from 'src/app/core/models/base.component';
 
 @Component({
   selector: 'app-authorize',
   templateUrl: './authorize.component.html',
   styleUrls: ['./authorize.component.scss']
 })
-export class AuthorizeComponent implements OnInit, OnDestroy {
+export class AuthorizeComponent extends BaseComponent implements OnInit, OnDestroy {
   public get color(): IndicatorColor {
     return this.auth.isAuthenticated() ? 'green' : 'red';
   }
@@ -28,13 +29,11 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
   private pHasInitiated = false;
   private loginFormHasValues = false;
 
-  private subscriptions: Subscription[] = [];
-
-  constructor(private route: ActivatedRoute, private fb: FormBuilder, private auth: AuthService) {}
+  constructor(private fb: FormBuilder, private auth: AuthService) {
+    super();
+  }
 
   ngOnInit(): void {
-    console.log('route', this.route);
-
     this.loginForm = this.fb.group({
       username: 'demo',
       password: 'demo'
@@ -47,13 +46,6 @@ export class AuthorizeComponent implements OnInit, OnDestroy {
       this.auth.InitiateObservable.subscribe(hasInitiated => (this.pHasInitiated = hasInitiated))
     );
     this.checkLoginForm(this.loginForm.value);
-  }
-
-  public ngOnDestroy(): void {
-    for (const subscription of this.subscriptions) {
-      subscription.unsubscribe();
-    }
-    this.subscriptions = [];
   }
 
   public sayHello(): void {

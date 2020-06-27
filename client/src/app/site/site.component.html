@@ -1,0 +1,17 @@
+<mat-card class="dashboard-card">
+  <ng-container *ngIf="!hasInitiated">
+    <app-loading-spinner></app-loading-spinner>
+  </ng-container>
+  <ng-container *ngIf="hasInitiated">
+    <app-indicator [color]="color">{{ isAuthenticated ? 'Angemeldet' : 'Nicht angemeldet' }}</app-indicator>
+    <div class="flex-center">
+      <button mat-icon-button>
+        <mat-icon>{{ isSubRoute ? 'arrow_back_ios' : '' }}</mat-icon>
+      </button>
+      <h1 class="underscore title">OpenSlides4 Authentifizierungsdienst</h1>
+    </div>
+    <div class="flex-center router-content">
+      <router-outlet #o="outlet"></router-outlet>
+    </div>
+  </ng-container>
+</mat-card>

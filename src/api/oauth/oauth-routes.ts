@@ -28,8 +28,8 @@ export class OAuthRoutes {
 
   private configApiRoutes(): void {
     this.app.all(`${this.SECURE_API_PREFIX}/*`, (req, res, next) => {
-      console.log('configOAuth', req.headers);
-      this.oauthValidator.validateToken(req, res, next, 'authorization', OAuthHandlerInterface.TOKEN_ISSUER);
+      console.log('configOAuth', req.headers['authentication'], req.headers['authorization']);
+      this.oauthValidator.validateToken(req, res, next);
     });
   }
 
@@ -41,6 +41,10 @@ export class OAuthRoutes {
 
   private initOAuthRoutes(): void {
     this.app.get(this.getOAuthRoute('/greet'), (request, response) => this.oauthHandler.greeting(request, response));
+    this.app.get(this.getOAuthRoute('/all-motions'), (request, response) =>
+      this.oauthHandler.getAllMotions(request, response)
+    );
+    this.app.get(this.getOAuthRoute('/get-motion'), (req, res) => this.oauthHandler.getMotionById(req, res));
   }
 
   private getOAuthRoute(urlPath: string): string {

@@ -43,27 +43,35 @@ export class HttpService {
     method: HTTPMethod,
     data?: any,
     customHeader?: HttpHeaders,
-    responseType?: string
+    responseType?: string,
+    serverURL: string = this.serverURL
   ): Promise<T> {
     if (!responseType) {
       responseType = 'json';
     }
 
-    console.log('send', data);
-
-    const url = path.startsWith('/') ? `${this.serverURL}${path}` : `${this.serverURL}/${path}`;
+    const url = path.startsWith('/') ? `${serverURL}${path}` : `${serverURL}/${path}`;
     // const url = path;
+
+    if (customHeader) {
+      for (const header of this.defaultHeaders.keys()) {
+        customHeader.set(header, this.defaultHeaders.getAll(header));
+      }
+    }
 
     const options = {
       body: data,
       headers: customHeader ? customHeader : this.defaultHeaders,
-      withCredentials: true,
+      withCredentials: true, // true for working with cookies
       responseType: responseType as 'json'
     };
+
+    console.log('options', options);
 
     try {
       return await this.http.request<T>(method, url, options).toPromise();
     } catch (e) {
+      console.log('error', e);
       // throw this.handleError(e);
     }
   }
@@ -76,30 +84,37 @@ export class HttpService {
    * @param responseType option expected response type by the request (i.e 'arraybuffer')
    * @returns A promise holding a generic
    */
-  public async get<T = Answer>(path: string, data?: any, header?: HttpHeaders, responseType?: string): Promise<T> {
-    return await this.send<T>(path, HTTPMethod.GET, data, header, responseType);
+  public async get<T = Answer>(
+    path: string,
+    data?: any,
+    header?: HttpHeaders,
+    responseType?: string,
+    serverURL?: string
+  ): Promise<T> {
+    return await this.send<T>(path, HTTPMethod.GET, data, header, responseType, serverURL);
   }
 
-  public async post<T = Answer>(path: string, data?: any, header?: HttpHeaders): Promise<T> {
-    return await this.send<T>(path, HTTPMethod.POST, data, header);
+  public async post<T = Answer>(path: string, data?: any, header?: HttpHeaders, serverURL?: string): Promise<T> {
+    return await this.send<T>(path, HTTPMethod.POST, data, header, null, serverURL);
   }
 
-  public async patch<T = Answer>(path: string, data?: any, header?: HttpHeaders): Promise<T> {
-    return await this.send<T>(path, HTTPMethod.PATCH, data, header);
+  public async patch<T = Answer>(path: string, data?: any, header?: HttpHeaders, serverURL?: string): Promise<T> {
+    return await this.send<T>(path, HTTPMethod.PATCH, data, header, null, serverURL);
   }
 
-  public async put<T = Answer>(path: string, data?: any, header?: HttpHeaders): Promise<T> {
-    return await this.send<T>(path, HTTPMethod.PUT, data, header);
+  public async put<T = Answer>(path: string, data?: any, header?: HttpHeaders, serverURL?: string): Promise<T> {
+    return await this.send<T>(path, HTTPMethod.PUT, data, header, null, serverURL);
   }
 
-  public async delete<T = Answer>(path: string, data?: any, header?: HttpHeaders): Promise<T> {
-    return await this.send<T>(path, HTTPMethod.DELETE, data, header);
+  public async delete<T = Answer>(path: string, data?: any, header?: HttpHeaders, serverURL?: string): Promise<T> {
+    return await this.send<T>(path, HTTPMethod.DELETE, data, header, null, serverURL);
   }
 
-  public getServerURL(): string {
+  private getServerURL(): string {
     const protocol = window.location.protocol;
     const location = window.location.hostname;
     const port = window.location.port;
     return `${protocol}//${location}:${port === '4210' ? '8010' : port}`;
+    // (protocol === 'https:' ? 'wss' : 'ws') + '://' + location + ':' + (port === '4200' ? '8000' : port);
   }
 }

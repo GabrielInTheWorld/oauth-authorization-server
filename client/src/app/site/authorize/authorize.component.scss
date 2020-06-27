@@ -1,7 +1,12 @@
-.dashboard-card {
+.router-card {
+  width: 150px;
+  height: 150px;
+  cursor: pointer;
+  outline: none;
+  margin: 6px;
   display: flex;
-  flex-direction: column;
-  height: 600px;
-  min-width: 500px;
-  max-width: 900px;
+
+  h3 {
+    text-align: center;
+  }
 }

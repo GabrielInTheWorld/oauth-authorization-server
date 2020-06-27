@@ -1,3 +1,3 @@
 export interface Collection {
-    readonly collectionString: string;
+  readonly collectionString: string;
 }

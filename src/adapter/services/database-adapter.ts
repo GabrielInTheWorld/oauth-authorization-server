@@ -102,7 +102,7 @@ export default class DatabaseAdapter implements DatabasePort {
     const docs = await this.database.allDocs({ include_docs: true, startkey: prefix });
     const results = docs.rows;
     for (const result of results) {
-      objects.push(new this.modelConstructor(result.doc));
+      objects.push(new this.modelConstructor(result));
     }
     return objects;
   }

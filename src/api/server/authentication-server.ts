@@ -27,13 +27,20 @@ export default class AuthenticationServer implements BaseServer {
   private oauthRoutes: OAuthRoutes;
   private readonly port: number;
 
-  public constructor(input: any) {
+  public constructor(input: { port: number }) {
     this.port = input.port;
     this.createApp();
     this.createServer();
     this.initializeConfig();
     this.initializeRoutes();
     this.initClient();
+  }
+  public getApp(): express.Application {
+    return this.app;
+  }
+
+  public getServer(): Server {
+    return this.server;
   }
 
   private createApp(): void {
@@ -52,10 +59,10 @@ export default class AuthenticationServer implements BaseServer {
   }
 
   private initializeRoutes(): void {
-    this.oauthRoutes = new OAuthRoutes(this.app);
-    this.oauthRoutes.initRoutes();
     this.routes = new Routes(this.app);
     this.routes.initRoutes();
+    this.oauthRoutes = new OAuthRoutes(this.app);
+    this.oauthRoutes.initRoutes();
   }
 
   private initClient(): void {
@@ -66,10 +73,9 @@ export default class AuthenticationServer implements BaseServer {
   }
 
   private corsFunction(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const requestingOrigin = req.headers.origin || '';
-    console.log('cors:', requestingOrigin, req.headers, req.body);
+    const origin = req.headers.origin;
+    const requestingOrigin = Array.isArray(origin) ? origin.join(' ') : origin || '';
     if (AuthenticationServer.ALLOWED_ORIGINS.indexOf(requestingOrigin) > -1) {
-      console.log('cors is valid');
       res.setHeader('Access-Control-Allow-Origin', requestingOrigin);
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST, DELETE, PUT');
@@ -79,13 +85,5 @@ export default class AuthenticationServer implements BaseServer {
     );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     return next();
-  }
-
-  public getApp(): express.Application {
-    return this.app;
-  }
-
-  public getServer(): Server {
-    return this.server;
   }
 }

@@ -8,6 +8,7 @@ import { Modules } from '../../model-services/modules';
 import { OAuthHandlerInterface } from './oauth-handler-interface';
 import TokenGenerator from '../services/token-generator';
 import UserService from '../../core/models/user/user-service';
+import { MotionService } from '../../core/models/motions/motion-service';
 
 type CodeChallengeMethod = undefined | 'S256';
 
@@ -42,6 +43,9 @@ export class OAuthHandler implements OAuthHandlerInterface {
   @InjectService(UserService)
   private readonly userService: UserService;
 
+  @InjectService(MotionService)
+  private readonly motionService: MotionService;
+
   private readonly registeredClients: Client[] = [
     {
       clientName: 'OAuth2-App',
@@ -63,6 +67,20 @@ export class OAuthHandler implements OAuthHandlerInterface {
   public async register(req: express.Request, res: express.Response): Promise<void> {}
 
   public async refresh(req: express.Request, res: express.Response): Promise<void> {}
+
+  public async getAllMotions(req: express.Request, res: express.Response): Promise<void> {
+    res.json({
+      success: true,
+      motions: this.motionService.getAllMotions()
+    });
+  }
+
+  public async getMotionById(req: express.Request, res: express.Response): Promise<void> {
+    res.json({
+      success: true,
+      motion: this.motionService.getMotionById(req.body.motion_id)
+    });
+  }
 
   public async generateToken(req: express.Request, res: express.Response): Promise<void> {
     console.log('generateToken', req.body);
@@ -125,7 +143,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
           this.sendError(res, 'Provide a user!');
           return;
         }
-        const ticket = await this.tokenGenerator.createTicket(user, OAuthHandlerInterface.TOKEN_ISSUER);
+        const ticket = await this.tokenGenerator.createTicket(user);
 
         res
           .status(200)

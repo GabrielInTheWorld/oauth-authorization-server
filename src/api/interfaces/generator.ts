@@ -22,6 +22,6 @@ export interface Response {
 }
 
 export class Generator extends InjectableClass {
-  public createTicket: (user: User, issuer: string) => Promise<Response>;
-  public renewTicket: (cookie: string, sessionId: string, user: User, issuer: string) => Promise<Response>;
+  public createTicket: (user: User) => Promise<Response>;
+  public renewTicket: (cookie: string, sessionId: string, user: User) => Promise<Response>;
 }

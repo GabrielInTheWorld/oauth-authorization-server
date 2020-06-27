@@ -1,34 +1,41 @@
-<mat-card class="dashboard-card flex-center">
-  <ng-container *ngIf="!hasInitiated">
-    <app-loading-spinner></app-loading-spinner>
-  </ng-container>
-  <ng-container *ngIf="true">
-    <app-indicator [color]="color"></app-indicator>
-    <h1 class="underscore">OpenSlides4 Authentifizierungsdienst</h1>
-    <button mat-button (click)="whoAmI()">Who am I</button>
-    <ng-container *ngIf="isAuthenticated()">
-      <button mat-button (click)="sayHello()">Sag Hallo</button>
-      <button mat-button (click)="logout()">Abmelden</button>
-    </ng-container>
-    <ng-container *ngIf="!isAuthenticated()">
-      <form [formGroup]="loginForm">
-        <div>
-          <mat-form-field>
-            <input matInput formControlName="username" placeholder="Username" />
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-form-field>
-            <input matInput formControlName="password" placeholder="Password" />
-          </mat-form-field>
-        </div>
-      </form>
-      <div>
-        <button mat-raised-button color="primary" [disabled]="disableConfirmButton" (click)="login()">
-          Anmelden
-        </button>
-        <button mat-button (click)="clear()">Abbruch</button>
-      </div>
-    </ng-container>
-  </ng-container>
-</mat-card>
+<div class="flex-center">
+  <button mat-button (click)="whoAmI()">Who am I</button>
+</div>
+<ng-container *ngIf="isAuthenticated()">
+  <div class="flex-center">
+    <button mat-button (click)="sayHello()">Sag Hallo</button>
+    <button mat-button (click)="logout()">Abmelden</button>
+  </div>
+  <div class="flex-center container">
+    <mat-card class="router-card flex-center" routerLink="/register">
+      <h3>
+        Eine Anwendung registrieren
+      </h3>
+    </mat-card>
+    <mat-card class="router-card flex-center" routerLink="/motions">
+      <h3>
+        Anträge
+      </h3>
+    </mat-card>
+  </div>
+</ng-container>
+<ng-container *ngIf="!isAuthenticated()">
+  <form [formGroup]="loginForm">
+    <div>
+      <mat-form-field>
+        <input matInput formControlName="username" placeholder="Username" />
+      </mat-form-field>
+    </div>
+    <div>
+      <mat-form-field>
+        <input matInput formControlName="password" placeholder="Password" />
+      </mat-form-field>
+    </div>
+  </form>
+  <div>
+    <button mat-raised-button color="primary" [disabled]="disableConfirmButton" (click)="login()">
+      Anmelden
+    </button>
+    <button mat-button (click)="clear()">Abbruch</button>
+  </div>
+</ng-container>
