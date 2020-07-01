@@ -4,6 +4,7 @@ import { AuthService } from '../core/services/auth.service';
 import { IndicatorColor } from '../ui/components/indicator/indicator.component';
 import { Router, NavigationEnd, RouterEvent, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { connectableObservableDescriptor } from 'rxjs/internal/observable/ConnectableObservable';
 
 @Component({
   selector: 'app-site',
@@ -36,20 +37,20 @@ export class SiteComponent extends BaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.subscriptions.push(
-      this.router.events.pipe(filter((e: any): e is RouterEvent => e instanceof NavigationEnd)).subscribe(route => {
-        console.log('url', route);
-        this.pIsSubRoute = route.url !== '/';
-      }),
+      this.router.events
+        .pipe(filter((e: any): e is RouterEvent => e instanceof NavigationEnd))
+        .subscribe(route => (this.pIsSubRoute = route.url !== '/')),
       this.auth.InitiateObservable.subscribe(hasInitiated => (this.pHasInitiated = hasInitiated)),
       this.route.url.subscribe(urls => (this.pIsSubRoute = !!urls.length))
     );
     this.init();
   }
 
+  public goBack(): void {
+    this.router.navigateByUrl('/');
+  }
+
   private async init(): Promise<void> {
-    // console.log('init ', await this.route.url.toPromise());
-    // const url = await this.route.url.toPromise();
-    // this.pIsSubRoute = !!url.length;
-    // console.log('is subroute:', this.isSubRoute);
+    this.pIsSubRoute = window.location.pathname !== '/';
   }
 }

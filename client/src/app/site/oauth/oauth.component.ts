@@ -37,24 +37,24 @@ export class OauthComponent extends BaseComponent implements OnInit {
       this.route.queryParams.subscribe((queryParams: { state: string; code?: string; user_id?: string }) => {
         console.log('queryParams', queryParams);
         if (queryParams.code) {
-          this.authService.oAuth2Callback(queryParams.code, queryParams.state, queryParams.user_id);
+          // this.authService.oAuth2Callback(queryParams.code, queryParams.state, queryParams.user_id);
         }
       })
     );
   }
 
   public oauthOpenSlides(): void {
-    this.authService.oAuth2();
+    // this.authService.oAuth2();
   }
 
   private setToken(tokenType: TokenType): void {
     if (tokenType) {
       this.tokenType = tokenType;
-      this.authService.helloApi().then(answer => console.log('answer from api:', answer));
-      this.authService
-        .helloOAuth()
-        .then(answer => console.log('answer from oauth 2', answer))
-        .catch(e => console.log('error:', e));
+      // this.authService.helloApi().then(answer => console.log('answer from api:', answer));
+      // this.authService
+      //   .helloOAuth()
+      //   .then(answer => console.log('answer from oauth 2', answer))
+      //   .catch(e => console.log('error:', e));
     }
   }
 }

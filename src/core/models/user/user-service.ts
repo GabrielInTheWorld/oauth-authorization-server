@@ -2,7 +2,7 @@ import { uuid } from 'uuidv4';
 
 import DatabaseAdapter from '../../../adapter/services/database-adapter';
 import { DatabasePort } from '../../../adapter/interfaces/database-port';
-import { Constructable, Inject } from '../../modules/decorators';
+import { Constructable, Inject, InjectService } from '../../modules/decorators';
 import User from './user';
 import { UserServiceInterface } from './user-service.interface';
 
@@ -17,10 +17,13 @@ export default class UserService implements UserServiceInterface {
 
   public constructor() {
     this.mockUserData();
-    this.getAllUsersFromDatabase().then(users => this.initUserCollection(users));
+    this.getAllUsersFromDatabase()
+      .then(users => this.initUserCollection(users))
+      .catch(e => console.log(e));
   }
 
   public async create(username: string, password: string): Promise<User> {
+    console.log('promise21');
     const userId = uuid();
     const user: User = new User({ username, password, userId });
     const done = await this.database.set(User.COLLECTIONSTRING, userId, user);
@@ -31,40 +34,50 @@ export default class UserService implements UserServiceInterface {
   }
 
   public async getUserByCredentials(username: string, password: string): Promise<User | undefined> {
+    console.log('promise19');
     const users = this.getAllUsers();
     return users.find(user => user.username === username && user.password === password);
   }
 
   public async getUserBySessionId(sessionId: string): Promise<User | undefined> {
+    console.log('promise20');
     const users = this.getAllUsers();
     return users.find(user => user.sessionId === sessionId);
   }
 
   public async getUserByUserId(userId: string): Promise<User | undefined> {
+    console.log('promise22');
     const users = this.getAllUsers();
     return users.find(user => user.userId === userId);
   }
 
   public async hasUser(username: string, password: string): Promise<boolean> {
+    console.log('promise23');
     const users = this.getAllUsers();
     return !!users.find(user => user.username === username && user.password === password);
   }
 
   public getAllUsers(): User[] {
+    console.log('promise24');
     return Array.from(this.userCollection.values());
   }
 
   private async getAllUsersFromDatabase(): Promise<User[]> {
+    console.log('promise25');
     return await this.database.getAll(User.COLLECTIONSTRING);
   }
 
   private initUserCollection(users: User[]): void {
+    console.log('promise26');
     for (const user of users) {
       this.userCollection.set(user.userId, user);
     }
   }
 
   private async mockUserData(): Promise<void> {
-    await this.create('demo', 'demo');
+    console.log('promise27');
+    await this.create('demo', 'demo')
+      .then(() => console.log('success'))
+      .catch(e => console.log(e));
   }
 }

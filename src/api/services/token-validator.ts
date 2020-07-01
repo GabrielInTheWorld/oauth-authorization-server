@@ -36,6 +36,9 @@ export default class TokenValidator implements Validator {
 
   public validateToken(request: any, response: express.Response, next: express.NextFunction): express.Response | void {
     let token = (request.headers['authentication'] || request.headers['authorization']) as string;
+    // console.log('token', token);
+    // console.log('headers', request.headers);
+    console.log('body', request.body);
     if (!token) {
       return response.json({
         success: false,

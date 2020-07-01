@@ -11,6 +11,7 @@ export default class TokenGenerator implements Generator {
   public name = 'TokenGenerator';
 
   public async createTicket(user: User): Promise<Response> {
+    console.log('promise14');
     if (!Object.keys(user).length) {
       throw new Error('user is empty.');
     }
@@ -22,6 +23,7 @@ export default class TokenGenerator implements Generator {
   }
 
   public async renewTicket(cookie: string, sessionId: string, user: User): Promise<Response> {
+    console.log('promise15');
     try {
       const token = this.generateToken(sessionId, user);
       return { token, cookie, user };

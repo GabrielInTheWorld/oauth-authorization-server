@@ -9,8 +9,18 @@ import { OAuthHandlerInterface } from './oauth-handler-interface';
 import TokenGenerator from '../services/token-generator';
 import UserService from '../../core/models/user/user-service';
 import { MotionService } from '../../core/models/motions/motion-service';
+import { Validator } from '../interfaces/validator';
+import TokenValidator from '../services/token-validator';
+import { ClientService } from '../../core/models/client/client-service';
 
 type CodeChallengeMethod = undefined | 'S256';
+
+interface Register {
+  userId: string;
+  clientName: string;
+  redirectUrl: string;
+  description?: string;
+}
 
 interface Client {
   clientId: string;
@@ -19,8 +29,8 @@ interface Client {
   codeChallengeMethod?: CodeChallengeMethod;
   state: string;
   scope: string;
-  redirectUri?: string;
-  clientName?: string;
+  redirectUrl?: string;
+  appName?: string;
 }
 
 interface UrlOptions {
@@ -40,15 +50,21 @@ export class OAuthHandler implements OAuthHandlerInterface {
   @Inject(Generator)
   private readonly tokenGenerator: TokenGenerator;
 
+  @Inject(Validator)
+  private readonly tokenValidator: TokenValidator;
+
   @InjectService(UserService)
   private readonly userService: UserService;
+
+  @InjectService(ClientService)
+  private readonly clientService: ClientService;
 
   @InjectService(MotionService)
   private readonly motionService: MotionService;
 
-  private readonly registeredClients: Client[] = [
+  private registeredClients: Client[] = [
     {
-      clientName: 'OAuth2-App',
+      appName: 'OAuth2-App',
       clientId: 'oauth-client-1',
       state: '',
       scope: 'user'
@@ -59,16 +75,55 @@ export class OAuthHandler implements OAuthHandlerInterface {
 
   private readonly requests: any = {};
 
+  public constructor() {
+    this.init();
+  }
+
   public greeting(req: express.Request, res: express.Response): void {
     console.log('incoming request for greetings', req.headers, req.body);
     res.json({ success: true, message: 'hello world in OAuth 2.0' });
   }
 
-  public async register(req: express.Request, res: express.Response): Promise<void> {}
+  public async register(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise7');
+    const body = req.body as Register;
+    if (!body.userId || !body.redirectUrl || !body.clientName) {
+      res.json({
+        success: false,
+        message: 'Necessary information are not provided'
+      });
+      return;
+    }
+    const client = await this.clientService.create(body.clientName, body.redirectUrl, body.description);
+    res.json({
+      success: true,
+      client
+    });
+    return;
+  }
 
-  public async refresh(req: express.Request, res: express.Response): Promise<void> {}
+  public async refresh(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise8');
+    const refreshToken = req.body['refresh_token'];
+    const userId = req.body['user_id'];
+    if (!TokenValidator.verifyToken(refreshToken)) {
+      res.json({ success: false, message: 'Refresh token is not valid' });
+      return;
+    }
+    const user = await this.userService.getUserByUserId(userId);
+    if (user) {
+      const ticket = await this.tokenGenerator.createTicket(user);
+
+      res.status(200).json({
+        access_token: `Bearer ${ticket.token}`,
+        token_type: 'Bearer'
+      });
+      return;
+    }
+  }
 
   public async getAllMotions(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise9');
     res.json({
       success: true,
       motions: this.motionService.getAllMotions()
@@ -76,6 +131,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   public async getMotionById(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise10');
     res.json({
       success: true,
       motion: this.motionService.getMotionById(req.body.motion_id)
@@ -83,6 +139,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   public async generateToken(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise11');
     console.log('generateToken', req.body);
     const authorizationHeader = req.headers.authorization;
     let clientId;
@@ -117,6 +174,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
       }
       if (req.body.code_verifier) {
         codeChallenge = this.generateCodeChallenge(client.codeChallengeMethod, req.body.code_verifier);
+        console.log('codeChallenge', codeChallenge, client.codeChallenge);
         if (codeChallenge !== client.codeChallenge) {
           this.sendError(res, 'invalid code verifier');
           return;
@@ -157,6 +215,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   public async authorize(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise12');
     console.log('authorize callback', req.query);
     const queries = (req.query as unknown) as UrlOptions;
     if (!Object.keys(queries).length) {
@@ -178,7 +237,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
         client.codeChallenge = queries.code_challenge;
         client.codeChallengeMethod = queries.code_challenge_method;
       }
-      client.redirectUri = queries.redirect_uri;
+      client.redirectUrl = queries.redirect_uri;
 
       this.requests[reqid] = queries;
       res.render('authorize', { client, reqid });
@@ -186,6 +245,7 @@ export class OAuthHandler implements OAuthHandlerInterface {
   }
 
   public async approve(req: express.Request, res: express.Response): Promise<void> {
+    console.log('promise13');
     console.log('approved body', req.body);
 
     const reqid = req.body.reqid;
@@ -273,5 +333,10 @@ export class OAuthHandler implements OAuthHandlerInterface {
   private sendError(res: express.Response, message: string): void {
     console.log(message);
     res.status(401).json({ error: message });
+  }
+
+  private async init(): Promise<void> {
+    const clients = await this.clientService.getAllClients();
+    // this.registeredClients = clients;
   }
 }

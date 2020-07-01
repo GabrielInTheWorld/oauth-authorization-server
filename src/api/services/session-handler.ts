@@ -17,7 +17,7 @@ export default class SessionHandler implements SessionHandlerInterface {
 
   public validateSession(request: any, response: Response, next: NextFunction): Response | void {
     const refreshId = request.cookies['refreshId'] as string;
-    console.log('validateSession', refreshId);
+    console.log('validateSession', request.body);
     try {
       const cookie = jwt.verify(refreshId, Keys.privateCookieKey()) as Cookie;
       if (!this.activeSessions.has(cookie.sessionId)) {

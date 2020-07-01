@@ -5,11 +5,12 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AuthorizeComponent } from './site/authorize/authorize.component';
 import { IndexComponent } from './site/index/index.component';
-import { HttpClientModule, HttpClientXsrfModule } from '@angular/common/http';
+import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from './ui/library/material.module';
 import { UIModule } from './ui/ui.module';
 import { FormsModule } from '@angular/forms';
+import { TokenInterceptorService } from './core/services/token-interceptor.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -24,7 +25,13 @@ import { FormsModule } from '@angular/forms';
     }),
     BrowserAnimationsModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TokenInterceptorService,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

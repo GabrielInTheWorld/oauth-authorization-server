@@ -38,7 +38,7 @@ export default class Routes {
 
   private configRoutes(): void {
     this.app.all('*', (req, res, next) => {
-      console.log('request', req.headers);
+      console.log('request', req.body);
       next();
     });
     this.app.all(
@@ -75,16 +75,17 @@ export default class Routes {
     /**
      * Routes for motions - only for presenting this app
      */
-    this.app.get(this.getSecureUrl('/all-motions'), (req, res) => {
+    this.app.get(this.getSecureUrl('/motions/all'), (req, res) => {
       this.routeHandler.getAllMotions(req, res);
     });
-    this.app.get(this.getSecureUrl('/get-motion'), (req, res) => {
+    this.app.post(this.getSecureUrl('/motions/get'), (req, res) => {
+      console.log('/motions/get', req.body);
       this.routeHandler.getMotionById(req, res);
     });
-    this.app.put(this.getSecureUrl('/update-motion'), (req, res) => {
+    this.app.put(this.getSecureUrl('/motions/update'), (req, res) => {
       this.routeHandler.updateMotion(req, res);
     });
-    this.app.post(this.getSecureUrl('/create-motion'), (req, res) => {
+    this.app.post(this.getSecureUrl('/motions/create'), (req, res) => {
       this.routeHandler.createMotion(req, res);
     });
   }

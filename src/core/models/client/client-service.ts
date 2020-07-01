@@ -1,8 +1,7 @@
-import { DatabasePort } from 'src/adapter/interfaces/database-port';
-import DatabaseAdapter from 'src/adapter/services/database-adapter';
-import { Constructable, Inject } from 'src/core/modules/decorators';
-import { Modules } from 'src/model-services/modules';
-
+import { DatabasePort } from '../../../adapter/interfaces/database-port';
+import DatabaseAdapter from '../../../adapter/services/database-adapter';
+import { Constructable, Inject, InjectService } from '../../../core/modules/decorators';
+import { Modules } from '../../../model-services/modules';
 import { Client } from './client';
 import { ClientServiceInterface } from './client-service.interface';
 
@@ -16,10 +15,12 @@ export class ClientService {
   private readonly clientCollection = new Map<string, Client>();
 
   public constructor() {
-    this.getAllClientsFromDatabase().then(clients => this.initClientCollection(clients));
+    this.init();
+    // this.getAllClientsFromDatabase().then(clients => this.initClientCollection(clients));
   }
 
   public async create(appName: string, redirectUrl: string, appDescription: string = ''): Promise<Client> {
+    console.log('promise16');
     const id = Modules.random();
     const client = new Client({ appName, redirectUrl, appDescription });
     const done = await this.database.set(Client.COLLECTIONSTRING, id, client);
@@ -38,6 +39,7 @@ export class ClientService {
   }
 
   public async setClientSecret(clientId: string, clientSecret: string): Promise<void> {
+    console.log('promise17');
     const client = this.getClientById(clientId);
     if (client) {
       client.clientSecret = clientSecret;
@@ -50,7 +52,18 @@ export class ClientService {
     return Array.from(this.clientCollection.values());
   }
 
+  private async init(): Promise<void> {
+    try {
+      await this.getAllClientsFromDatabase()
+        .then(clients => this.initClientCollection(clients))
+        .catch(e => console.log(e));
+    } catch {
+      console.log('error');
+    }
+  }
+
   private async getAllClientsFromDatabase(): Promise<Client[]> {
+    console.log('promise18');
     return await this.database.getAll(Client.COLLECTIONSTRING);
   }
 

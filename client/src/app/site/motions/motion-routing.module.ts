@@ -10,6 +10,10 @@ const routes: Routes = [
     component: MotionListComponent
   },
   {
+    path: 'new',
+    component: MotionDetailComponent
+  },
+  {
     path: ':id',
     component: MotionDetailComponent
   }

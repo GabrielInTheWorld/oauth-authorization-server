@@ -22,6 +22,8 @@ export class HttpService {
 
   private readonly serverURL: string;
 
+  public accessToken: string;
+
   public constructor(private readonly http: HttpClient) {
     this.defaultHeaders = new HttpHeaders().set('Content-Type', 'application/json').set('Accept', 'application/json');
     this.serverURL = this.getServerURL();

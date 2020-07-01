@@ -1,3 +1,3 @@
-import { InjectableClass } from 'src/core/modules/decorators';
+import { InjectableClass } from '../../../core/modules/decorators';
 
 export class ClientServiceInterface extends InjectableClass {}

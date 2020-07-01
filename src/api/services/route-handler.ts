@@ -47,6 +47,7 @@ export default class RouteHandler implements RouteHandlerInterface {
       });
     }
     const user = (await this.userService.getUserByCredentials(username, password)) || ({} as User);
+    console.log('user', user, this.userService.getAllUsers());
     const ticket = await this.tokenGenerator.createTicket(user);
     this.sessionHandler.addSession(ticket.user);
     response
@@ -157,6 +158,7 @@ export default class RouteHandler implements RouteHandlerInterface {
   }
 
   public getAllMotions(req: express.Request, res: express.Response): void {
+    console.log('all motions');
     res.json({
       success: true,
       motions: this.motionService.getAllMotions()
@@ -166,11 +168,12 @@ export default class RouteHandler implements RouteHandlerInterface {
   public getMotionById(req: express.Request, res: express.Response): void {
     res.json({
       success: true,
-      motion: this.motionService.getMotionById(req.body.motion_id)
+      motion: this.motionService.getMotionById(req.body.id)
     });
   }
 
   public async createMotion(req: express.Request, res: express.Response): Promise<void> {
+    console.log('create motion', req.body);
     const motion = await this.motionService.create(req.body.motion_title, req.body.motion_description);
     res.json({
       success: true,

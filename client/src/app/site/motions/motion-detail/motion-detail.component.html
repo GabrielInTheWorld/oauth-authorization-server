@@ -1,1 +1,17 @@
-<p>motion-detail works!</p>
+<div>
+  <form [formGroup]="motionForm" *ngIf="!await">
+    <mat-form-field>
+      <mat-label>Titel</mat-label>
+      <input matInput formControlName="motionTitle" required />
+    </mat-form-field>
+    <br />
+    <mat-form-field>
+      <mat-label>Beschreibung</mat-label>
+      <textarea id="description" matInput formControlName="motionDescription"></textarea>
+    </mat-form-field>
+  </form>
+</div>
+<div>
+  <button mat-button color="primary" (click)="confirm()">Ok</button>
+  <button mat-button (click)="cancel()">Abbrechen</button>
+</div>

@@ -1,6 +1,6 @@
 import DatabaseAdapter from '../../../adapter/services/database-adapter';
 import { DatabasePort } from '../../../adapter/interfaces/database-port';
-import { Inject } from '../../../core/modules/decorators';
+import { Inject, InjectService } from '../../../core/modules/decorators';
 import { Modules } from '../../../model-services/modules';
 import { Motion } from './motion';
 import { MotionServiceInterface } from './motion-service.interface';
@@ -18,44 +18,55 @@ export class MotionService implements MotionServiceInterface {
   }
 
   public async create(title: string, description: string): Promise<Motion> {
-    const id = Modules.random();
-    const client = new Motion({ title, description });
-    const done = await this.database.set(Motion.COLLECTIONSTRING, id, client);
+    console.log('motion service', title, description);
+    const key = Modules.random();
+    const id = `${Motion.COLLECTIONSTRING}_${key}`;
+    const motion = new Motion({ id, key, title, description });
+    console.log('mtion', motion);
+    const done = await this.database.set(Motion.COLLECTIONSTRING, key, motion);
     if (done) {
-      this.motionCollection.set(id, client);
+      this.motionCollection.set(key, motion);
     }
-    return client;
+    return motion;
   }
 
   public getMotionById(motionId: string): Motion | undefined {
-    return this.getAllMotions().find(motion => motion.motionId === motionId);
+    console.log(
+      'getMotionById',
+      motionId,
+      this.getAllMotions().find(motion => motion.key === motionId)
+    );
+    return this.getAllMotions().find(motion => motion.key === motionId);
   }
 
-  public updateMotion(motionId: string, update: Partial<Motion>): Motion | undefined {
+  public async updateMotion(motionId: string, update: Partial<Motion>): Promise<Motion | undefined> {
+    console.log('promise31');
     const motion = this.getMotionById(motionId);
     if (motion) {
       motion.update(update);
       this.motionCollection.set(motionId, motion);
-      this.database.set(Motion.COLLECTIONSTRING, motionId, motion);
+      await this.database.set(Motion.COLLECTIONSTRING, motionId, motion);
     }
     return motion;
   }
 
   public hasClient(clientId: string): boolean {
-    return !!this.getAllMotions().find(motion => motion.motionId === clientId);
+    return !!this.getAllMotions().find(motion => motion.key === clientId);
   }
 
   public getAllMotions(): Motion[] {
+    console.log('motions', Array.from(this.motionCollection.values()));
     return Array.from(this.motionCollection.values());
   }
 
   private async getAllMotionsFromDatabase(): Promise<Motion[]> {
+    // console.log('promise30', this.database.getAll(Motion.COLLECTIONSTRING));
     return await this.database.getAll(Motion.COLLECTIONSTRING);
   }
 
   private initMotionCollection(motions: Motion[]): void {
     for (const motion of motions) {
-      this.motionCollection.set(motion.motionId, motion);
+      this.motionCollection.set(motion.key, motion);
     }
   }
 }

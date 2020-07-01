@@ -86,7 +86,9 @@ export default class DatabaseAdapter implements DatabasePort {
    * @returns A boolean if the object was successfully deleted.
    */
   public async remove(prefix: string, key: string): Promise<boolean> {
-    const result = await this.database.get(this.getPrefixedKey(prefix, key)).then(doc => this.database.remove(doc));
+    const result = await this.database
+      .get(this.getPrefixedKey(prefix, key))
+      .then(async doc => await this.database.remove(doc));
     return result.ok;
   }
 
@@ -97,12 +99,14 @@ export default class DatabaseAdapter implements DatabasePort {
    *
    * @returns An array with all found objects for the specific prefix.
    */
-  public async getAll<T>(prefix?: string): Promise<T[]> {
+  public async getAll<T>(prefix: string = ''): Promise<T[]> {
     const objects: T[] = [];
     const docs = await this.database.allDocs({ include_docs: true, startkey: prefix });
     const results = docs.rows;
     for (const result of results) {
-      objects.push(new this.modelConstructor(result));
+      if (result.id.startsWith(prefix)) {
+        objects.push(new this.modelConstructor(result));
+      }
     }
     return objects;
   }

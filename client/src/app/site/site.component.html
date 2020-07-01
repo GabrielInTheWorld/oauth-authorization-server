@@ -5,7 +5,7 @@
   <ng-container *ngIf="hasInitiated">
     <app-indicator [color]="color">{{ isAuthenticated ? 'Angemeldet' : 'Nicht angemeldet' }}</app-indicator>
     <div class="flex-center">
-      <button mat-icon-button>
+      <button mat-icon-button (click)="goBack()">
         <mat-icon>{{ isSubRoute ? 'arrow_back_ios' : '' }}</mat-icon>
       </button>
       <h1 class="underscore title">OpenSlides4 Authentifizierungsdienst</h1>
