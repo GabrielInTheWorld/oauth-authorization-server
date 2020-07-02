@@ -41,10 +41,10 @@ export class OAuthRoutes {
 
   private initOAuthRoutes(): void {
     this.app.get(this.getOAuthRoute('/greet'), (request, response) => this.oauthHandler.greeting(request, response));
-    this.app.get(this.getOAuthRoute('/all-motions'), (request, response) =>
+    this.app.get(this.getOAuthRoute('/motions/all'), (request, response) =>
       this.oauthHandler.getAllMotions(request, response)
     );
-    this.app.get(this.getOAuthRoute('/get-motion'), (req, res) => this.oauthHandler.getMotionById(req, res));
+    this.app.post(this.getOAuthRoute('/motions/get'), (req, res) => this.oauthHandler.getMotionById(req, res));
   }
 
   private getOAuthRoute(urlPath: string): string {
