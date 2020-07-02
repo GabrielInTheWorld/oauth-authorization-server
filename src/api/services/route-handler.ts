@@ -146,6 +146,7 @@ export default class RouteHandler implements RouteHandlerInterface {
 
   public index(_: any, response: express.Response): void {
     const index = path.join(path.resolve(RouteHandlerInterface.CLIENT_PATH), 'index.html');
+    console.log('index', index);
     response.sendFile(index);
   }
 

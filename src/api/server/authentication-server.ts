@@ -16,7 +16,8 @@ export default class AuthenticationServer implements BaseServer {
     'http://localhost:8000',
     'http://localhost:4200',
     'http://localhost:4210',
-    'http://localhost:8010'
+    'http://localhost:8010',
+    'https://oauth-2-app.herokuapp.com'
   ];
 
   public name = 'AuthenticationServer';
