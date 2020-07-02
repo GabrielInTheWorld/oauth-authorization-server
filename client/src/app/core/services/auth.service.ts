@@ -57,10 +57,6 @@ export class AuthService {
     return this._accessToken;
   }
 
-  // public get openslidesOAuthUrl(): string {
-  //   return this.buildURL(this.openslidesServer.authorizePath, this.getOptionsForAuthorizing(this.openslidesClient));
-  // }
-
   private _accessToken: string;
 
   private oauthToken: string;
@@ -104,26 +100,6 @@ export class AuthService {
     return this.http.get('/api/hello', null, new HttpHeaders({ authentication: this._accessToken }));
   }
 
-  // public helloApi(): Promise<void> {
-  //   return this.http.get(
-  //     '/oauth/greet',
-  //     { token: JSON.stringify({ authorization: this.oauthToken }), hello: 'world' },
-  //     null,
-  //     null,
-  //     'http://localhost:8000'
-  //   );
-  // }
-
-  // public helloOAuth(): Promise<void> {
-  //   return this.http.get(
-  //     '/oauth/greet',
-  //     null,
-  //     new HttpHeaders().set('authorization', this.tokenSubject.value.accessToken),
-  //     null,
-  //     'http://localhost:8000'
-  //   );
-  // }
-
   public login(credentials: { username: string; password: string }): void {
     this.http.post<LoginAnswer>('/login', credentials).then(answer => {
       console.log('answer', answer);
@@ -134,64 +110,6 @@ export class AuthService {
     });
   }
 
-  // public async oAuth2(): Promise<void> {
-  //   const client = this.openslidesClient;
-  //   const state = this.generateRandomString();
-  //   const codeVerifier = this.generateRandomString();
-  //   await this.storage.set(this.pkceStateStorageKey, state);
-  //   await this.storage.set(this.pkceCodeVerifierStorageKey, codeVerifier);
-  //   // await this.storage.set(this.providerStorageKey, provider);
-
-  //   const codeChallenge = this.sha(codeVerifier);
-
-  //   const authUrl = `${client.server.authorizePath}?response_type=code&client_id=${encodeURIComponent(
-  //     client.clientId
-  //   )}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(client.scope)}&redirect_uri=${encodeURIComponent(
-  //     client.redirectUris[0]
-  //   )}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
-
-  //   window.location.href = authUrl;
-  // }
-
-  // public async oAuth2Callback(code: string, state: string, userId: string): Promise<void> {
-  //   // const provider = await this.storage.get<ClientProvider>(this.providerStorageKey);
-  //   const storedState = await this.storage.get<string>(this.pkceStateStorageKey);
-  //   const storedCodeVerifier = await this.storage.get(this.pkceCodeVerifierStorageKey);
-  //   // const client = this.getClientByProvider(provider);
-  //   const client = this.openslidesClient;
-
-  //   console.log('storedState', storedState, state, state.substr(state.indexOf('state')));
-
-  //   if (storedState !== state) {
-  //     return;
-  //   }
-  //   window.history.replaceState({}, null, '/');
-  //   this.http
-  //     .post<{ token_type: string; access_token: string; refresh_token?: string; token_provider?: string }>(
-  //       '/token',
-  //       {
-  //         grant_type: 'authorization_code',
-  //         code,
-  //         user_id: userId,
-  //         client_id: client.clientId,
-  //         redirect_uri: client.redirectUris[0],
-  //         code_verifier: storedCodeVerifier
-  //       },
-  //       null,
-  //       'http://localhost:8000'
-  //     )
-  //     .then(answer => {
-  //       console.log('answer from token-endpoint', answer);
-  //       this.oauthToken = answer.access_token;
-  //       this.tokenSubject.next({
-  //         accessToken: answer.access_token,
-  //         refreshToken: answer.refresh_token,
-  //         tokenType: answer.token_type,
-  //         tokenProvider: answer.token_provider
-  //       });
-  //     });
-  // }
-
   public whoAmI(callback?: () => void): void {
     this.http
       .post<LoginAnswer>('/who-am-i')
@@ -199,7 +117,6 @@ export class AuthService {
         console.log('answer', answer);
         if (answer && answer.success) {
           this._accessToken = answer.token;
-          // this.http.accessToken = answer.token;
         }
       })
       .then(() => (callback ? callback() : undefined));
@@ -210,7 +127,6 @@ export class AuthService {
       console.log('logout', answer);
       if (answer && answer.success) {
         this._accessToken = null;
-        // this.http.accessToken = null;
       }
     });
   }
@@ -218,15 +134,6 @@ export class AuthService {
   public isAuthenticated(): boolean {
     return !!this._accessToken;
   }
-
-  // public getAccessToken(code: string, state: string): any {
-  //   // const client = this.getClientByProvider(provider);
-  //   const client = this.openslidesClient;
-  //   console.log('get auth-token', code, state, client);
-  //   return this.http
-  //     .post(this.buildURL(client.server.tokenPath, this.getOptionsForToken(client, code)))
-  //     .then(answer => console.log('answer from accesstoken', answer));
-  // }
 
   private setAccessToken(token: string): void {
     this._accessToken = token;
@@ -247,55 +154,4 @@ export class AuthService {
         return this.http.get(pathToServer, headers);
     }
   }
-
-  // private buildURL(path: string, options: UrlOptions, hash?: string): string {
-  //   const newUrl = url.parse(path, true);
-  //   delete newUrl.search;
-  //   if (!newUrl.query) {
-  //     newUrl.query = {};
-  //   }
-  //   for (const key in options) {
-  //     newUrl.query[key] = (options as any)[key];
-  //   }
-  //   if (hash) {
-  //     newUrl.hash = hash;
-  //   }
-  //   return url.format(newUrl);
-  // }
-
-  // private getOptionsForAuthorizing(clientObject: Client): UrlOptions {
-  //   return {
-  //     client_id: clientObject.clientId,
-  //     scope: clientObject.scope,
-  //     //   redirect_uri: Server.PORT === 8000 ? this.client.redirectUris[0] : this.client.redirectUris[1],
-  //     redirect_uri: clientObject.redirectUris[0],
-  //     state: clientObject.state,
-  //     response_type: 'code'
-  //   };
-  // }
-
-  // private getOptionsForToken(client: Client, authCode: string): UrlOptions {
-  //   return {
-  //     client_id: client.clientId,
-  //     client_secret: client.clientSecret,
-  //     redirect_uri: client.redirectUris[0],
-  //     state: client.state,
-  //     code: authCode
-  //   };
-  // }
-
-  // /**
-  //  * PKCE-Helper function.
-  //  * See `https://github.com/aaronpk/pkce-vanilla-js/blob/master/index.html`
-  //  * Generates a random string.
-  //  */
-  // private generateRandomString(): string {
-  //   const array = new Uint32Array(28);
-  //   window.crypto.getRandomValues(array);
-  //   return Array.from(array, dec => `0${dec.toString(16)}`.substr(-2)).join('');
-  // }
-
-  // private sha(plain: string): string {
-  //   return new sha256().update(plain).digest('hex');
-  // }
 }

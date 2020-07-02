@@ -18,11 +18,9 @@ export class MotionService implements MotionServiceInterface {
   }
 
   public async create(title: string, description: string): Promise<Motion> {
-    console.log('motion service', title, description);
     const key = Modules.random();
     const id = `${Motion.COLLECTIONSTRING}_${key}`;
     const motion = new Motion({ id, key, title, description });
-    console.log('mtion', motion);
     const done = await this.database.set(Motion.COLLECTIONSTRING, key, motion);
     if (done) {
       this.motionCollection.set(key, motion);
@@ -31,11 +29,6 @@ export class MotionService implements MotionServiceInterface {
   }
 
   public getMotionById(motionId: string): Motion | undefined {
-    console.log(
-      'getMotionById',
-      motionId,
-      this.getAllMotions().find(motion => motion.key === motionId)
-    );
     return this.getAllMotions().find(motion => motion.key === motionId);
   }
 
@@ -55,7 +48,7 @@ export class MotionService implements MotionServiceInterface {
   }
 
   public getAllMotions(): Motion[] {
-    console.log('motions', Array.from(this.motionCollection.values()));
+    console.log('motions in motion service', Array.from(this.motionCollection.values()));
     return Array.from(this.motionCollection.values());
   }
 

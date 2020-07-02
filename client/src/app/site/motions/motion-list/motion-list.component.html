@@ -1,8 +1,7 @@
-<div>
+<div class="motion-list">
   <h3>Anträge</h3>
   <button mat-icon-button (click)="createMotion()"><mat-icon>add</mat-icon></button>
 </div>
-
 <div>
   <div class="motion-identifier" *ngFor="let motion of motions" (click)="goToMotion(motion.key)">
     {{ motion.title }}
